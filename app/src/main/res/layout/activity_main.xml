@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    android:orientation="vertical" xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:gravity="center"
+    android:paddingLeft="15dp"
+    android:paddingRight="15dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <EditText
+        android:id="@+id/et_between_time"
+        android:hint="评论间隔（s）"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:inputType="number"
+        android:maxLength="3"
+        />
+    <Button
+        android:layout_marginTop="10dp"
+        android:id="@+id/bt_start"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="开启抖音评论"
+        android:layout_gravity="center_vertical"
+        />
+
+</LinearLayout>
