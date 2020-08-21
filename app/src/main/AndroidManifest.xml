@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.dy.autocomment">
 
+    <uses-permission android:name="android.permission.VIBRATE" />
     <application
         android:name=".BaseApp"
         android:allowBackup="true"

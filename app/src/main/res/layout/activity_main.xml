@@ -9,10 +9,18 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
-
+    <TextView
+        android:id="@+id/tv_results"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="95dp"
+        android:gravity="center_horizontal"
+        android:textSize="16sp"
+        android:textColor="#000"
+        android:text="上次发送：0条  本次发送：0条"/>
     <EditText
         android:id="@+id/et_between_time"
-        android:hint="评论间隔（s）"
+        android:hint="直播间评论间隔（s）"
         android:textSize="14sp"
         android:gravity="center"
         android:layout_width="match_parent"
@@ -20,12 +28,67 @@
         android:inputType="number"
         android:maxLength="3"
         />
-    <Button
+
+    <EditText
         android:layout_marginTop="10dp"
+        android:id="@+id/et_yh_between_time"
+        android:hint="养号停留时间（s）"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:inputType="number"
+        android:maxLength="3"
+        />
+
+    <EditText
+        android:layout_marginTop="10dp"
+        android:id="@+id/et_like_point"
+        android:hint="养号点赞概率（%）"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:inputType="number"
+        android:maxLength="3"
+        />
+
+    <Switch
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="养号模式（自带点赞）"
+        android:switchPadding="10dp"
+        android:layout_marginTop="15dp"
+        android:checked="false"
+        android:id="@+id/s_is_yh"
+        />
+
+    <Switch
+        android:visibility="gone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="自动评论（需开养号）"
+        android:switchPadding="10dp"
+        android:layout_marginTop="15dp"
+        android:checked="false"
+        android:id="@+id/s_is_comment"
+        />
+
+    <Switch
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="开启监听"
+        android:switchPadding="10dp"
+        android:layout_marginTop="15dp"
+        android:checked="true"
+        android:id="@+id/s_is_open"
+        />
+    <Button
+        android:layout_marginTop="15dp"
         android:id="@+id/bt_start"
         android:layout_width="match_parent"
         android:layout_height="50dp"
-        android:text="开启抖音评论"
+        android:text="保存并打开抖音"
         android:layout_gravity="center_vertical"
         />
 

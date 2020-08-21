@@ -23,4 +23,17 @@
         <item >大家好，我是个活跃宝宝，交盆友的走一波</item>
         <item >关必会，求抱，求关，各种求，交盆友，交盆友，交盆友，交盆友，交盆友，交盆友，交盆友，交盆友</item>
     </string-array>
+
+
+
+
+
+    <string-array name="comment_normal">
+        <item >加油</item>
+        <item >不错</item>
+        <item >可以可以</item>
+        <item >[捂脸][捂脸]</item>
+        <item >[比心][比心][比心][比心]</item>
+        <item >[送心]</item>
+    </string-array>
 </resources>
