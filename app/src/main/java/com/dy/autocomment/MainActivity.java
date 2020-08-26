@@ -20,6 +20,8 @@ import android.widget.TextView;
 import com.dy.fastframework.activity.BaseActivity;
 import com.dy.fastframework.view.CommonMsgDialog;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 
 import yin.deng.normalutils.utils.MyUtils;
@@ -29,15 +31,13 @@ import yin.deng.normalutils.view.MsgDialog;
 public class MainActivity extends BaseActivity {
 
     private Button btStart;
-    private EditText etBeTweenTime;
     private Switch switchIsOpen;
     private TextView tvResults;
     private int lastCount;
     private boolean isFirstOpen=true;
-    private Switch tvIsYh;
     private EditText etYhBeTime;
-    private Switch switchIsOpenComment;
     private EditText etLikePoint;
+    private EditText etCommentPoint;
 
     @Override
     public int setLayout() {
@@ -48,7 +48,7 @@ public class MainActivity extends BaseActivity {
     public void onResume() {
         super.onResume();
         if (!isAccessibilitySettingsOn(this,
-                AccessibilityTestService.class.getName())) {// 判断服务是否开启
+                AccessibilityAutoCommentAndClickLikeService.class.getName())) {// 判断服务是否开启
             final CommonMsgDialog msgDialog=new CommonMsgDialog(this);
             msgDialog.setCancelable(false);
             msgDialog.getHolder().tvTitle.setText("系统提示");
@@ -70,14 +70,8 @@ public class MainActivity extends BaseActivity {
             //do other things...
         }
         int nowCount=BaseApp.getSharedPreferenceUtil().getInt("count");
-        if(isFirstOpen) {
-            lastCount = BaseApp.getSharedPreferenceUtil().getInt("count");
-            isFirstOpen=false;
-            nowCount=0;
-        }
-        AccessibilityTestService.isYhOpen=tvIsYh.isChecked();
-        AccessibilityTestService.isOpenComment=switchIsOpenComment.isChecked();
-        tvResults.setText("上次发送："+lastCount+"条  本次发送："+nowCount+"条");
+        int nowCommentCount=BaseApp.getSharedPreferenceUtil().getInt("commentCount");
+        tvResults.setText("上次点赞视频："+nowCount+"条  上次发送评论："+nowCommentCount+"条");
     }
 
 
@@ -116,54 +110,43 @@ public class MainActivity extends BaseActivity {
     @Override
     public void bindViewWithId() {
         btStart=findViewById(R.id.bt_start);
-        etBeTweenTime=findViewById(R.id.et_between_time);
         switchIsOpen=findViewById(R.id.s_is_open);
-        switchIsOpenComment=findViewById(R.id.s_is_comment);
         tvResults =findViewById(R.id.tv_results);
-        tvIsYh =findViewById(R.id.s_is_yh);
         etYhBeTime =findViewById(R.id.et_yh_between_time);
         etLikePoint =findViewById(R.id.et_like_point);
+        etCommentPoint =findViewById(R.id.et_comment_point);
     }
 
     @Override
     public void initFirst() {
-        AccessibilityTestService.isSwitchOpen=switchIsOpen.isChecked();
-        AccessibilityTestService.isOpenComment=switchIsOpenComment.isChecked();
+        try {
+            OutputStream os = Runtime.getRuntime().exec("su").getOutputStream();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        AccessibilityAutoCommentAndClickLikeService.isSwitchOpen=switchIsOpen.isChecked();
         switchIsOpen.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                AccessibilityTestService.isSwitchOpen=switchIsOpen.isChecked();
-            }
-        });
-        switchIsOpenComment.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                AccessibilityTestService.isOpenComment=switchIsOpenComment.isChecked();
-            }
-        });
-        tvIsYh.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                AccessibilityTestService.isYhOpen=tvIsYh.isChecked();
+                AccessibilityAutoCommentAndClickLikeService.isSwitchOpen=switchIsOpen.isChecked();
             }
         });
         btStart.setOnClickListener(new NoDoubleClickListener() {
             @Override
             protected void onNoDoubleClick(View v) {
-                boolean isEmpty=MyUtils.isEmpty(etBeTweenTime);
                 boolean isYhBeTimeEmpty=MyUtils.isEmpty(etYhBeTime);
-                if(isEmpty){
-                    AccessibilityTestService.clickNeedWaitTime=10*1000;
-                }else{
-                    AccessibilityTestService.clickNeedWaitTime=Integer.parseInt(etBeTweenTime.getText().toString())*1000;
-                }
                 if(!isYhBeTimeEmpty){
-                    AccessibilityTestService.yhWaitTimeEveryVideo=Integer.parseInt(etYhBeTime.getText().toString().trim());
+                    AccessibilityAutoCommentAndClickLikeService.yhWaitTimeEveryVideo=Integer.parseInt(etYhBeTime.getText().toString().trim());
                 }
-                AccessibilityTestService.refreshNowData();
+                AccessibilityAutoCommentAndClickLikeService.refreshNowData();
                 if(!MyUtils.isEmpty(etLikePoint)) {
-                    AccessibilityTestService.likePoint = Integer.parseInt(etLikePoint.getText().toString().trim());
+                    AccessibilityAutoCommentAndClickLikeService.lickPercent = Integer.parseInt(etLikePoint.getText().toString().trim());
                 }
+                if(!MyUtils.isEmpty(etCommentPoint)) {
+                    AccessibilityAutoCommentAndClickLikeService.commentPercent = Integer.parseInt(etCommentPoint.getText().toString().trim());
+                }
+                BaseApp.getSharedPreferenceUtil().saveInt("count",0);
+                BaseApp.getSharedPreferenceUtil().saveInt("commentCount",0);
                 launchDouYin();
             }
         });

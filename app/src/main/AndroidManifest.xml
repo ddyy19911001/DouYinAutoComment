@@ -20,7 +20,7 @@
         </activity>
 
         <service
-            android:name=".AccessibilityTestService"
+            android:name=".AccessibilityAutoCommentAndClickLikeService"
             android:exported="true"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
