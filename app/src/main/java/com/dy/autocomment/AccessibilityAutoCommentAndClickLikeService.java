@@ -23,6 +23,7 @@ import yin.deng.normalutils.utils.LogUtils;
 
 /**
  * 自动点赞评论养号辅助
+ * 适配版本 12.4.0 适配机型 小米9
  */
 public class AccessibilityAutoCommentAndClickLikeService extends AccessibilityService {
     public static int yhWaitTimeEveryVideo=15;//养号页面停留时间
