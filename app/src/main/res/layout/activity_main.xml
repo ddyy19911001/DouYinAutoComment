@@ -22,7 +22,7 @@
     <EditText
         android:layout_marginTop="10dp"
         android:id="@+id/et_yh_between_time"
-        android:hint="养号停留时间（s）默：15s"
+        android:hint="养号停留时间（s）默：10s"
         android:textSize="14sp"
         android:gravity="center"
         android:layout_width="match_parent"
@@ -34,7 +34,7 @@
     <EditText
         android:layout_marginTop="10dp"
         android:id="@+id/et_like_point"
-        android:hint="养号点赞概率（%）默：40%"
+        android:hint="养号点赞概率（%）默：50%"
         android:textSize="14sp"
         android:gravity="center"
         android:layout_width="match_parent"
@@ -45,7 +45,7 @@
     <EditText
         android:layout_marginTop="10dp"
         android:id="@+id/et_comment_point"
-        android:hint="养号评论概率（%）默：30%"
+        android:hint="养号评论概率（%）默：40%"
         android:textSize="14sp"
         android:gravity="center"
         android:layout_width="match_parent"
@@ -62,6 +62,25 @@
         android:layout_marginTop="15dp"
         android:checked="true"
         android:id="@+id/s_is_open"
+        />
+    <Switch
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="养号点赞评论"
+        android:switchPadding="10dp"
+        android:layout_marginTop="15dp"
+        android:checked="true"
+        android:id="@+id/s_is_open_yh"
+        />
+    <Switch
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="直播间抢红包"
+        android:visibility="gone"
+        android:switchPadding="10dp"
+        android:layout_marginTop="15dp"
+        android:checked="true"
+        android:id="@+id/s_is_open_zb"
         />
     <Button
         android:layout_marginTop="15dp"

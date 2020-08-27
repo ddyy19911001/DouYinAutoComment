@@ -26,10 +26,10 @@ import yin.deng.normalutils.utils.LogUtils;
  * 适配版本 12.4.0 适配机型 小米9
  */
 public class AccessibilityAutoCommentAndClickLikeService extends AccessibilityService {
-    public static int yhWaitTimeEveryVideo=15;//养号页面停留时间
+    public static int yhWaitTimeEveryVideo=10;//养号页面停留时间
     public static int lickCount=0;//当前总共点赞数量
-    public static int lickPercent=40;//点赞概率
-    public static int commentPercent=30;//评论概率
+    public static int lickPercent=50;//点赞概率
+    public static int commentPercent=40;//评论概率
     public static final int WATING=-1;//准备开始
     public static final int NORMAL=0;//准备开始
     public static final int COUNTING=1;//开始计时
@@ -43,14 +43,15 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     AccessibilityEvent mAccessibilityEvent;
     public static boolean isSwitchOpen=false;//是否开启辅助
     private DownTimer timer;
-    public String enterMainAcTag="com.ss.android.ugc.aweme:id/i1s";//视频发布的左下角昵称id
-    public String clickEnterInLivingRoom="com.ss.android.ugc.aweme:id/d9k";//直播视频的底部LinearLayoutId
+    public String enterMainAcTag="com.ss.android.ugc.aweme:id/e2i";//视频发布的左下角昵称id
+    public String clickEnterInLivingRoom="com.ss.android.ugc.aweme:id/dg9";//直播视频的底部LinearLayoutId
     public String adName="广告";
-    private String commentIsOpenStr="com.ss.android.ugc.aweme:id/agl";//评论弹框列表条目id
-    private String commentEditTextStr="com.ss.android.ugc.aweme:id/af8";//软键盘弹起后的评论输入框id
-    private String sendBtStr="com.ss.android.ugc.aweme:id/afr";//发送按钮的id
+    private String commentIsOpenStr="com.ss.android.ugc.aweme:id/f59";//评论弹框列表条目id
+    private String commentEditTextStr="com.ss.android.ugc.aweme:id/afo";//软键盘弹起后的评论输入框id
+    private String sendBtStr="com.ss.android.ugc.aweme:id/ag7";//发送按钮的id
     private boolean isSwiping=false;
     public static int commentCount=0;
+    public static boolean isOpenYh=true;//是否开启养号功能
     private boolean isClickingLike=false;
 
     /**
@@ -67,65 +68,75 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
             LogUtils.v("已关闭辅助");
             return;
         }
+        if (!isOpenYh) {
+            return;
+        }
         //开始干活
         switch (nowState) {
             case NORMAL:
-                LogUtils.d("开始干活了，当前类型："+nowState);
+                if (isSwiping) {
+                    return;
+                }
+                LogUtils.d("开始干活了，当前类型：" + nowState);
                 List<AccessibilityNodeInfo> nodes = findNodesById(enterMainAcTag);
                 if (isOk(nodes)) {
                     LogUtils.d("找到音乐播放图标");
                     List<AccessibilityNodeInfo> nodeIsLiving = findNodesById(clickEnterInLivingRoom);
                     List<AccessibilityNodeInfo> nodeIsIsAd = findNodesByText(adName);
-                    if(isOk(nodeIsLiving)){
+                    if (isOk(nodeIsLiving)) {
                         showTs("直播间，直接划过");
                         LogUtils.e("直播间，直接划过");
-                        if(isSwiping){
-                            return;
-                        }
-                        isSwiping=true;
+                        isSwiping = true;
                         openNextOne();
                         new Handler().postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                isSwiping=false;
+                                isSwiping = false;
                                 nowState = NORMAL;
                             }
                         }, 1000);
-                    }else {
-                        if(isOk(nodeIsIsAd)){
+                    } else {
+                        if (isOk(nodeIsIsAd)) {
                             showTs("广告内容，直接划过");
                             LogUtils.e("广告内容，直接划过");
+                            isSwiping = true;
                             openNextOne();
-                            nowState = NORMAL;
-                        }else {
+                            new Handler().postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    isSwiping = false;
+                                    nowState = NORMAL;
+                                }
+                            }, 1000);
+                        } else {
                             startTimer();
                         }
                     }
                 } else {
                     LogUtils.e("暂未找到音乐播放图标");
-                    nowState=NORMAL;
+                    nowState = NORMAL;
                 }
                 break;
             case COUNTING:
                 List<AccessibilityNodeInfo> nodesWhenCounting = findNodesById(enterMainAcTag);
                 if (!isOk(nodesWhenCounting)) {
-                    if (!isPauseTimer&&timer != null) {
+                    if (!isPauseTimer && timer != null) {
                         timer.pause();
                         LogUtils.e("计时中，找不到音乐播放图标，暂停计时");
-                        isPauseTimer=true;
+                        isPauseTimer = true;
                         showTs("页面已切换，暂停任务计时");
                     }
                 } else {
-                    if (timer != null&&isPauseTimer) {
+                    if (timer != null && isPauseTimer) {
                         timer.resume();
-                        isPauseTimer=false;
+                        isPauseTimer = false;
                         showTs("页面已恢复，继续上次任务");
                         LogUtils.v("计时中，找到音乐播放图标，继续计时");
                     }
                 }
                 break;
             case COUNT_OVER:
-                LogUtils.d("计时结束了，当前类型："+nowState);
+                LogUtils.d("计时结束了，当前类型：" + nowState);
                 List<AccessibilityNodeInfo> nodesWhenCountOver = findNodesById(enterMainAcTag);
                 if (isOk(nodesWhenCountOver)) {
                     setIsClickLike();
@@ -134,19 +145,19 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                 }
                 break;
             case LIKEING:
-                if(isClickingLike){
+                if (isClickingLike) {
                     return;
                 }
-                LogUtils.d("开始点赞了，当前类型："+nowState);
+                LogUtils.d("开始点赞了，当前类型：" + nowState);
                 List<AccessibilityNodeInfo> nodesWhenLiking = findNodesById(enterMainAcTag);
                 if (isOk(nodesWhenLiking)) {
-                    isClickingLike=true;
+                    isClickingLike = true;
                     clickLike();
                     new Handler().postDelayed(new Runnable() {
                         @Override
                         public void run() {
                             nowState = LIKE_OVER;
-                            isClickingLike=false;
+                            isClickingLike = false;
                         }
                     }, 1000);
                 } else {
@@ -154,7 +165,7 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                 }
                 break;
             case LIKE_OVER:
-                LogUtils.d("点赞结束了，当前类型："+nowState);
+                LogUtils.d("点赞结束了，当前类型：" + nowState);
                 List<AccessibilityNodeInfo> nodesWhenCountLikeOver = findNodesById(enterMainAcTag);
                 if (isOk(nodesWhenCountLikeOver)) {
                     setIsNeedComment();
@@ -166,23 +177,24 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                 commentText();
                 break;
             case COMMENT_OVER:
-                if(isSwiping){
+                if (isSwiping) {
                     return;
                 }
-                isSwiping=true;
-                LogUtils.d("评论结束了，当前类型："+nowState);
+                isSwiping = true;
+                LogUtils.d("评论结束了，当前类型：" + nowState);
                 openNextOne();
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
                         nowState = NORMAL;
-                        isSwiping=false;
+                        isSwiping = false;
                     }
                 }, 1000);
                 break;
         }
-
     }
+
+
 
     long lastDoTime=0;
     boolean isInputOver=false;
@@ -260,6 +272,7 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
         }
     }
 
+
     private void setIsClickLike() {
         int isClickLike=RandomUtil.getRandom(100);
         LogUtils.e("预设点赞概率："+lickPercent+",当前随机数值为："+isClickLike);
@@ -281,7 +294,7 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     }
 
     private void startTimer() {
-        if(timer!=null){
+        if(nowState==COUNTING){
             return;
         }
         showTs("开始新的计时任务");

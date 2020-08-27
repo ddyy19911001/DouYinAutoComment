@@ -31,14 +31,15 @@
     <string-array name="comment_normal">
         <item >[呲牙][呲牙]</item>
         <item >哈哈[泪奔][泪奔]</item>
-        <item >送个小心心[送心][送心]</item>
-        <item >额[抠鼻]</item>
-        <item >送给你小心心[灵机一动]</item>
+        <item >[看][看]</item>
+        <item >[看][抠鼻]</item>
+        <item >[灵机一动][灵机一动]</item>
         <item >赞[赞][赞][赞]</item>
         <item >哈哈[泪奔][泪奔]</item>
         <item >[泪奔][泪奔]</item>
-        <item >送你小心心[送心]</item>
-        <item >小心心给你[比心]</item>
+        <item >[送心][比心]</item>
+        <item >[比心][比心]</item>
+        <item >加油[赞]</item>
         <item >哈哈[泪奔]</item>
         <item >可以的[比心]</item>
         <item >可以[送心]</item>
@@ -46,5 +47,13 @@
         <item >哈哈[捂脸][捂脸]</item>
         <item >来了[比心][比心]</item>
         <item >[送心][送心]</item>
+        <item >加油！！[送心]</item>
+        <item >棒！[送心]</item>
+        <item >奥里给[送心]</item>
+        <item >可爱[赞]</item>
+        <item >可爱[送心]</item>
+        <item >棒棒哒[送心]</item>
+        <item >nice[赞]</item>
+        <item >[赞]棒棒哒</item>
     </string-array>
 </resources>

@@ -32,12 +32,14 @@ public class MainActivity extends BaseActivity {
 
     private Button btStart;
     private Switch switchIsOpen;
+    private Switch switchIsOpenYh;
     private TextView tvResults;
     private int lastCount;
     private boolean isFirstOpen=true;
     private EditText etYhBeTime;
     private EditText etLikePoint;
     private EditText etCommentPoint;
+    private CommonMsgDialog msgDialog;
 
     @Override
     public int setLayout() {
@@ -49,7 +51,11 @@ public class MainActivity extends BaseActivity {
         super.onResume();
         if (!isAccessibilitySettingsOn(this,
                 AccessibilityAutoCommentAndClickLikeService.class.getName())) {// 判断服务是否开启
-            final CommonMsgDialog msgDialog=new CommonMsgDialog(this);
+            if(msgDialog!=null&&msgDialog.isShowing()){
+                msgDialog.dismiss();
+                msgDialog=null;
+            }
+            msgDialog=new CommonMsgDialog(this);
             msgDialog.setCancelable(false);
             msgDialog.getHolder().tvTitle.setText("系统提示");
             msgDialog.getHolder().tvSure.setText("去开启");
@@ -111,6 +117,7 @@ public class MainActivity extends BaseActivity {
     public void bindViewWithId() {
         btStart=findViewById(R.id.bt_start);
         switchIsOpen=findViewById(R.id.s_is_open);
+        switchIsOpenYh=findViewById(R.id.s_is_open_yh);
         tvResults =findViewById(R.id.tv_results);
         etYhBeTime =findViewById(R.id.et_yh_between_time);
         etLikePoint =findViewById(R.id.et_like_point);
@@ -129,6 +136,12 @@ public class MainActivity extends BaseActivity {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 AccessibilityAutoCommentAndClickLikeService.isSwitchOpen=switchIsOpen.isChecked();
+            }
+        });
+        switchIsOpenYh.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                AccessibilityAutoCommentAndClickLikeService.isOpenYh=switchIsOpenYh.isChecked();
             }
         });
         btStart.setOnClickListener(new NoDoubleClickListener() {
