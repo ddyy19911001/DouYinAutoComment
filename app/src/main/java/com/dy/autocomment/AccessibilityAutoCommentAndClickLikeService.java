@@ -28,8 +28,8 @@ import yin.deng.normalutils.utils.LogUtils;
 public class AccessibilityAutoCommentAndClickLikeService extends AccessibilityService {
     public static int yhWaitTimeEveryVideo=10;//养号页面停留时间
     public static int lickCount=0;//当前总共点赞数量
-    public static int lickPercent=50;//点赞概率
-    public static int commentPercent=40;//评论概率
+    public static int lickPercent=70;//点赞概率
+    public static int commentPercent=20;//评论概率
     public static final int WATING=-1;//准备开始
     public static final int NORMAL=0;//准备开始
     public static final int COUNTING=1;//开始计时
@@ -53,6 +53,7 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     public static int commentCount=0;
     public static boolean isOpenYh=true;//是否开启养号功能
     private boolean isClickingLike=false;
+    public static int viewedVideoCount=0;//已观看的视频总数
 
     /**
      * 重置当前所有标记类数据
@@ -188,6 +189,8 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                     public void run() {
                         nowState = NORMAL;
                         isSwiping = false;
+                        viewedVideoCount++;
+                        BaseApp.getSharedPreferenceUtil().saveInt("viewedVideoCount",viewedVideoCount);
                     }
                 }, 1000);
                 break;

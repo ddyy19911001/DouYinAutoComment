@@ -75,9 +75,10 @@ public class MainActivity extends BaseActivity {
             showTs( "服务已开启");
             //do other things...
         }
+        int viewedVideoCount=BaseApp.getSharedPreferenceUtil().getInt("viewedVideoCount");
         int nowCount=BaseApp.getSharedPreferenceUtil().getInt("count");
         int nowCommentCount=BaseApp.getSharedPreferenceUtil().getInt("commentCount");
-        tvResults.setText("上次点赞视频："+nowCount+"条  上次发送评论："+nowCommentCount+"条");
+        tvResults.setText("上次点赞视频："+nowCount+"条  上次发送评论："+nowCommentCount+"条"+"\n上次共观看视频："+viewedVideoCount+"个");
     }
 
 
@@ -160,6 +161,7 @@ public class MainActivity extends BaseActivity {
                 }
                 BaseApp.getSharedPreferenceUtil().saveInt("count",0);
                 BaseApp.getSharedPreferenceUtil().saveInt("commentCount",0);
+                BaseApp.getSharedPreferenceUtil().saveInt("viewedVideoCount",0);
                 launchDouYin();
             }
         });
