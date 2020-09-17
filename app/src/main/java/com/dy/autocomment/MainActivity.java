@@ -177,7 +177,7 @@ public class MainActivity extends BaseActivity {
                 if(!MyUtils.isEmpty(etMaxLikeSize)) {
                     AccessibilityAutoCommentAndClickLikeService.maxClickLikeSize = Integer.parseInt(etMaxLikeSize.getText().toString().trim());
                     if(AccessibilityAutoCommentAndClickLikeService.maxClickLikeSize<=0){
-                        AccessibilityAutoCommentAndClickLikeService.maxClickLikeSize=140;
+                        AccessibilityAutoCommentAndClickLikeService.maxClickLikeSize=100;
                     }
                 }
                 BaseApp.getSharedPreferenceUtil().saveInt("count",0);

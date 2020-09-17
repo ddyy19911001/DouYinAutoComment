@@ -72,7 +72,7 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     private long lastclickLeftTopTime=0;//上次点击左上角红包按钮的时间
     private long lastClickBack=0;
     private boolean isOpeningCommentBottomLinear=false;
-    public static int maxClickLikeSize=140;//最多可以点赞140个视频
+    public static int maxClickLikeSize=100;//最多可以点赞140个视频
     private boolean isKillSelfDoing=false;
 
     /**
