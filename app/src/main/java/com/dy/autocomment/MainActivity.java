@@ -19,6 +19,7 @@ import android.widget.TextView;
 
 import com.dy.fastframework.activity.BaseActivity;
 import com.dy.fastframework.view.CommonMsgDialog;
+import com.imuxuan.floatingview.FloatingView;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -44,6 +45,18 @@ public class MainActivity extends BaseActivity {
     @Override
     public int setLayout() {
         return R.layout.activity_main;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        FloatingView.get().attach(this);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        FloatingView.get().detach(this);
     }
 
     @Override
@@ -163,6 +176,8 @@ public class MainActivity extends BaseActivity {
                 BaseApp.getSharedPreferenceUtil().saveInt("commentCount",0);
                 BaseApp.getSharedPreferenceUtil().saveInt("viewedVideoCount",0);
                 launchDouYin();
+                FloatingView.get().add();
+                FloatingView.get().icon(R.mipmap.dy_logo);
             }
         });
     }
