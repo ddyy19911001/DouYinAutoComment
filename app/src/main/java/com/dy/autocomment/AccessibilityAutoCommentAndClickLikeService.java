@@ -2,12 +2,15 @@ package com.dy.autocomment;
 
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
+import android.app.ActivityManager;
+import android.content.Context;
 import android.graphics.Path;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.text.format.Formatter;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -16,6 +19,7 @@ import android.widget.Toast;
 import com.vise.utils.assist.RandomUtil;
 
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.util.List;
 
 import yin.deng.normalutils.utils.DownTimer;
@@ -68,6 +72,8 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     private long lastclickLeftTopTime=0;//上次点击左上角红包按钮的时间
     private long lastClickBack=0;
     private boolean isOpeningCommentBottomLinear=false;
+    public static int maxClickLikeSize=140;//最多可以点赞140个视频
+    private boolean isKillSelfDoing=false;
 
     /**
      * 重置当前所有标记类数据
@@ -151,6 +157,16 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                     return;
                 }
                 LogUtils.d("开始干活了，当前类型：" + nowState);
+                if(isKillSelfDoing){
+                    return;
+                }
+                if(lickCount>=maxClickLikeSize){
+                    isKillSelfDoing=true;
+                    killAll();
+                    isKillSelfDoing=false;
+                    return;
+                }
+                isClickLikeThis=false;
                 List<AccessibilityNodeInfo> nodes = findNodesById(enterMainAcTag);
                 if (isOk(nodes)) {
                     LogUtils.d("找到音乐播放图标");
@@ -249,6 +265,7 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                 commentText();
                 break;
             case COMMENT_OVER:
+                isClickLikeThis=false;
                 if (isSwiping) {
                     return;
                 }
@@ -452,6 +469,32 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
 
     }
 
+
+    /*
+     * 杀死后台进程
+     */
+    public void killAll(){
+        forceBack();
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                forceBack();
+            }
+        }, 100);
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                stopSelf();
+                android.os.Process.killProcess(android.os.Process.myPid());    //获取PID
+                System.exit(0);
+            }
+        }, 1000);
+    }
+
+
+
+
+
     private void forceBack() {
         LogUtils.v("点击返回键");
         String cmd="input keyevent 4";
@@ -461,6 +504,10 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     private void setIsNeedComment() {
         int isNeedComment=RandomUtil.getRandom(100);
         LogUtils.e("预设评论概率："+commentPercent+",当前随机数值为："+isNeedComment);
+        if(!isClickLikeThis){
+            nowState=COMMENT_OVER;
+            return;
+        }
         if(isNeedComment<=commentPercent){
             nowState=COMMENTING;
             showTs("进行评论");
@@ -585,9 +632,11 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     /**
      * 点个小红心
      */
+    boolean isClickLikeThis=false;//本个视频是否点赞
     public void clickLike(){
         forceClick(1020, 1410);
         lickCount++;
+        isClickLikeThis=true;
         BaseApp.getSharedPreferenceUtil().saveInt("count", lickCount);
     }
 

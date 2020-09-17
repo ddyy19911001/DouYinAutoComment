@@ -41,6 +41,7 @@ public class MainActivity extends BaseActivity {
     private EditText etLikePoint;
     private EditText etCommentPoint;
     private CommonMsgDialog msgDialog;
+    private EditText etMaxLikeSize;
 
     @Override
     public int setLayout() {
@@ -135,6 +136,7 @@ public class MainActivity extends BaseActivity {
         tvResults =findViewById(R.id.tv_results);
         etYhBeTime =findViewById(R.id.et_yh_between_time);
         etLikePoint =findViewById(R.id.et_like_point);
+        etMaxLikeSize =findViewById(R.id.et_max_like_size);
         etCommentPoint =findViewById(R.id.et_comment_point);
     }
 
@@ -171,6 +173,12 @@ public class MainActivity extends BaseActivity {
                 }
                 if(!MyUtils.isEmpty(etCommentPoint)) {
                     AccessibilityAutoCommentAndClickLikeService.commentPercent = Integer.parseInt(etCommentPoint.getText().toString().trim());
+                }
+                if(!MyUtils.isEmpty(etMaxLikeSize)) {
+                    AccessibilityAutoCommentAndClickLikeService.maxClickLikeSize = Integer.parseInt(etMaxLikeSize.getText().toString().trim());
+                    if(AccessibilityAutoCommentAndClickLikeService.maxClickLikeSize<=0){
+                        AccessibilityAutoCommentAndClickLikeService.maxClickLikeSize=140;
+                    }
                 }
                 BaseApp.getSharedPreferenceUtil().saveInt("count",0);
                 BaseApp.getSharedPreferenceUtil().saveInt("commentCount",0);

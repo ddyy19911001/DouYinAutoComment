@@ -54,6 +54,17 @@
         android:inputType="number"
         android:maxLength="3"
         />
+    <EditText
+        android:layout_marginTop="10dp"
+        android:id="@+id/et_max_like_size"
+        android:hint="最多点赞数（个）默：140个"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:inputType="number"
+        android:maxLength="3"
+        />
 
     <Switch
         android:layout_width="wrap_content"
