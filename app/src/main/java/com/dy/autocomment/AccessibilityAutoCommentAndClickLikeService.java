@@ -1,16 +1,10 @@
 package com.dy.autocomment;
 
 import android.accessibilityservice.AccessibilityService;
-import android.accessibilityservice.GestureDescription;
-import android.app.ActivityManager;
-import android.content.Context;
-import android.graphics.Path;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.SystemClock;
-import android.text.format.Formatter;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -19,7 +13,6 @@ import android.widget.Toast;
 import com.vise.utils.assist.RandomUtil;
 
 import java.io.OutputStream;
-import java.lang.reflect.Method;
 import java.util.List;
 
 import yin.deng.normalutils.utils.DownTimer;
@@ -31,10 +24,10 @@ import yin.deng.normalutils.utils.LogUtils;
  * 适配版本 12.4.0 适配机型 小米9
  */
 public class AccessibilityAutoCommentAndClickLikeService extends AccessibilityService {
-    public static int yhWaitTimeEveryVideo=10;//养号页面停留时间
+    public static int yhWaitTimeEveryVideo=3;//养号页面停留时间
     public static int lickCount=0;//当前总共点赞数量
     public static int lickPercent=70;//点赞概率
-    public static int commentPercent=20;//评论概率
+    public static int commentPercent=40;//评论概率
     public static final int WATING=-1;//准备开始
     public static final int NORMAL=0;//准备开始
     public static final int COUNTING=1;//开始计时
@@ -51,13 +44,14 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     AccessibilityEvent mAccessibilityEvent;
     public static boolean isSwitchOpen=false;//是否开启辅助
     private DownTimer timer;
-    public String enterMainAcTag="com.ss.android.ugc.aweme:id/ec6";//视频发布的左下角昵称id
-    public String clickEnterInLivingRoom="com.ss.android.ugc.aweme:id/dom";//直播视频的底部LinearLayoutId
+    public String enterMainAcTag="com.ss.android.ugc.aweme:id/dwq";//视频发布的左下角昵称id
+    public String clickEnterInLivingRoom="com.ss.android.ugc.aweme:id/dbc";//直播视频的底部LinearLayoutId
     public String adName="广告";
-    private String commentIsOpenStr="com.ss.android.ugc.aweme:id/dtf";//评论弹框列表条目id
-    private String commentEditTextStr="com.ss.android.ugc.aweme:id/aix";//软键盘弹起后的评论输入框id
-    private String sendBtStr="com.ss.android.ugc.aweme:id/aji";//发送按钮的id
-    private String livingRoomTopRightPeopleLinearId="com.ss.android.ugc.aweme:id/gp4";//直播间右上角的观众父容器
+    private String commentIsOpenStr="com.ss.android.ugc.aweme:id/dfz";//评论弹框列表条目id
+    private String commentEditTextStr="com.ss.android.ugc.aweme:id/ady";//软键盘弹起后的评论输入框id
+    private String sendBtStr="com.ss.android.ugc.aweme:id/aeg";//发送按钮的id
+    private String livingRoomTopRightPeopleLinearId="com.ss.android.ugc.aweme:id/iso";//直播间右上角的观众父容器
+    private String editTextParenetId="com.ss.android.ugc.aweme:id/ba7";//输入框父容器id
     private String redBagRootId="com.ss.android.ugc.aweme:id/fw0";//装福袋和红包的父容器
     private boolean isSwiping=false;
     public static int commentCount=0;
@@ -69,11 +63,13 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     private boolean isClickingLeftTop=false;
     private long lastClickLivingLikeTime=0;//上次直播点赞时间
     private long LivingLikeClickBetweenTime=60*1000;//一分钟给主播点赞一次
-    private long lastclickLeftTopTime=0;//上次点击左上角红包按钮的时间
+    private long lastclickBottomLinearTime =0;//上次点击左上角红包按钮的时间
     private long lastClickBack=0;
     private boolean isOpeningCommentBottomLinear=false;
-    public static int maxClickLikeSize=100;//最多可以点赞140个视频
+    public static int maxClickLikeSize=50;//最多可以点赞50个视频
     private boolean isKillSelfDoing=false;
+    public static long sendLivingCommentDelay=6000;//每隔5秒发一条评论
+    private int sendLivingCommentCount=0;//单个直播间发送的总评论数
 
     /**
      * 重置当前所有标记类数据
@@ -99,54 +95,13 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                 if(System.currentTimeMillis()-lastClickLivingLikeTime>=LivingLikeClickBetweenTime){
                     doClickLikeInLivingRoom();
                 }else {
-                    if(System.currentTimeMillis()-lastclickLeftTopTime<=20000) {
+                    long betweenTime=System.currentTimeMillis()- lastclickBottomLinearTime;
+                    if( betweenTime<=sendLivingCommentDelay) {
                         return;
                     }
+                    LogUtils.i("时间差："+betweenTime+",预设时间差："+sendLivingCommentDelay);
                     doLivingTask();
                 }
-            }else if(nowState==LIVING_RED_BAG){
-                LogUtils.w("当前状态："+nowState+",执行点击红包开抢");
-                //红包弹框已经被点击过了
-                final List<AccessibilityNodeInfo> node = findNodesById(headOfRedBagSenderId);
-                if(isOk(node)){
-                    LogUtils.e("红包弹框已经出现,等待倒计时");
-                    List<AccessibilityNodeInfo> nodeQiang = findNodesById(qiangId);
-                    if(isOk(nodeQiang)){
-                        if(nowState==LIVING_CLICK_QIANG){
-                            return;
-                        }
-                        nowState=LIVING_CLICK_QIANG;
-                        LogUtils.w("抢字出现了，点击开始抢");
-                        forceClick(500, 1200);
-                        new Handler().postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                forceClick(540,1640);
-                                lastclickLeftTopTime=0;
-                                nowState=NORMAL;
-                                LogUtils.e("关闭红包弹框,当前状态："+nowState);
-                            }
-                        }, 1000);
-                    }else{
-                        LogUtils.w("抢字还未出现，等待");
-                    }
-                }else {
-                    boolean isLivingRoomUserVisible=findIsLivingRoom();
-                    if(isLivingRoomUserVisible) {
-                        nowState = NORMAL;
-                        LogUtils.w("抢红包的弹框没有出现，等待点击左上角红包按钮");
-                    }else{
-                        LogUtils.w("抢红包的弹框没有没找到，重新查找");
-                        if(System.currentTimeMillis()-lastClickBack>30*1000){
-                            forceClick(500,1200);
-                            nowState = NORMAL;
-                            lastClickBack = System.currentTimeMillis();
-                        }
-                    }
-                }
-            }else{
-                LogUtils.e("不是直播间或未找到观众列表（弹框已出现）,当前状态："+nowState);
-                nowState=LIVING_RED_BAG;
             }
             return;
         }
@@ -319,28 +274,37 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
             return;
         }
         isLivingTaskDoing=true;
-        List<AccessibilityNodeInfo> rootView = findNodesById(redBagRootId);
-        LogUtils.w("当前状态："+nowState);
-        if(isOk(rootView)){
-            LogUtils.i("开始执行查找红包");
-            if(nowState==CHECH_RED_BAG){
-                return;
-            }
-            nowState=CHECH_RED_BAG;
-            checkHasRedBag(rootView.get(0));
-        }else{
-            if(nowState==CHECH_RED_BAG){
-                return;
-            }
-            nowState = NORMAL;
-            LogUtils.e("直播间未找到红包按钮，继续等待：状态"+nowState);
+        //点击底部框
+        try {
+            forceClick(211,2264);
+            lastclickBottomLinearTime=System.currentTimeMillis();
+            Thread.sleep(1000);
+            findEditextAndSendMsg();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-       new Handler().postDelayed(new Runnable() {
-           @Override
-           public void run() {
-               isLivingTaskDoing=false;
-           }
-       }, 500);
+
+    }
+
+    public void findEditextAndSendMsg() throws InterruptedException {
+        List<AccessibilityNodeInfo> nodeEditTextParent = findNodesById(editTextParenetId);
+        if(isOk(nodeEditTextParent)){
+            //输入框已经出现
+            setNodeText(nodeEditTextParent.get(0).getChild(0),getLiveCommentText());
+            //点击发送按钮
+            Thread.sleep(1000);
+            forceClick(1000,1440);
+            Thread.sleep(1000);
+            forceClick(500, 500);
+            Thread.sleep(1000);
+            isLivingTaskDoing=false;
+            sendLivingCommentCount++;
+            showTs("已发送评论"+sendLivingCommentCount+"条");
+        }else{
+            //输入框未出现,重新点击底部
+            isLivingTaskDoing=false;
+            findEditextAndSendMsg();
+        }
     }
 
     /**
@@ -370,7 +334,7 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                 LogUtils.i("开始点击左上角按钮");
                 forceClick(80,350);
                 lastClickBack=System.currentTimeMillis();
-                lastclickLeftTopTime=System.currentTimeMillis();
+                lastclickBottomLinearTime =System.currentTimeMillis();
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -588,6 +552,16 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
         return nowComment;
     }
 
+    /**
+     * 获取评论词
+     * @return
+     */
+    private String getLiveCommentText() {
+        String [] datas=getResources().getStringArray(R.array.comments);
+        String nowComment=datas[RandomUtil.getRandom(datas.length)];
+        return nowComment;
+    }
+
 
 
 
@@ -641,6 +615,31 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     }
 
 
+    /**
+     * 取消赞任务
+     */
+    public void cancleTask(){
+        new Thread(){
+            @Override
+            public void run() {
+                while (true){
+                    try {
+                        Thread.sleep(4000);
+                        LogUtils.i("取消点赞");
+                        clickLike();
+                        Thread.sleep(400);
+                        LogUtils.i("下一个");
+                        openNextOne();
+                        Thread.sleep(200);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }.start();
+    }
+
+
 
 
 
@@ -675,6 +674,9 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     protected void onServiceConnected() {
         super.onServiceConnected();
         LogUtils.d("qqqqqq无障碍服务已开启");
+        sendLivingCommentCount=0;
+        lastclickBottomLinearTime=System.currentTimeMillis();
+//        cancleTask();
     }
 
     public void setNodeText(AccessibilityNodeInfo node, String text)

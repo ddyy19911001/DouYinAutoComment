@@ -3,11 +3,15 @@ package com.dy.autocomment;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.accessibilityservice.AccessibilityService;
+import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
@@ -16,13 +20,18 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.dy.fastframework.activity.BaseActivity;
 import com.dy.fastframework.view.CommonMsgDialog;
 import com.imuxuan.floatingview.FloatingView;
+import com.yw.game.floatmenu.FloatItem;
+import com.yw.game.floatmenu.FloatLogoMenu;
+import com.yw.game.floatmenu.FloatMenuView;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import yin.deng.normalutils.utils.MyUtils;
@@ -42,23 +51,15 @@ public class MainActivity extends BaseActivity {
     private EditText etCommentPoint;
     private CommonMsgDialog msgDialog;
     private EditText etMaxLikeSize;
+    private EditText etLiveBetweenTime;
+    private List<FloatItem> itemList=new ArrayList<>();
+    private FloatLogoMenu mFloatMenu;
 
     @Override
     public int setLayout() {
         return R.layout.activity_main;
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        FloatingView.get().attach(this);
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        FloatingView.get().detach(this);
-    }
 
     @Override
     public void onResume() {
@@ -138,6 +139,7 @@ public class MainActivity extends BaseActivity {
         etLikePoint =findViewById(R.id.et_like_point);
         etMaxLikeSize =findViewById(R.id.et_max_like_size);
         etCommentPoint =findViewById(R.id.et_comment_point);
+        etLiveBetweenTime =findViewById(R.id.et_live_between_time);
     }
 
     @Override
@@ -174,20 +176,77 @@ public class MainActivity extends BaseActivity {
                 if(!MyUtils.isEmpty(etCommentPoint)) {
                     AccessibilityAutoCommentAndClickLikeService.commentPercent = Integer.parseInt(etCommentPoint.getText().toString().trim());
                 }
+                if(!MyUtils.isEmpty(etLiveBetweenTime)) {
+                    AccessibilityAutoCommentAndClickLikeService.sendLivingCommentDelay= Integer.parseInt(etLiveBetweenTime.getText().toString().trim())*1000;
+                }
                 if(!MyUtils.isEmpty(etMaxLikeSize)) {
                     AccessibilityAutoCommentAndClickLikeService.maxClickLikeSize = Integer.parseInt(etMaxLikeSize.getText().toString().trim());
                     if(AccessibilityAutoCommentAndClickLikeService.maxClickLikeSize<=0){
-                        AccessibilityAutoCommentAndClickLikeService.maxClickLikeSize=100;
+                        AccessibilityAutoCommentAndClickLikeService.maxClickLikeSize=50;
                     }
                 }
                 BaseApp.getSharedPreferenceUtil().saveInt("count",0);
                 BaseApp.getSharedPreferenceUtil().saveInt("commentCount",0);
                 BaseApp.getSharedPreferenceUtil().saveInt("viewedVideoCount",0);
                 launchDouYin();
-                FloatingView.get().add();
-                FloatingView.get().icon(R.mipmap.dy_logo);
+//                openFloatView();
             }
         });
+    }
+
+
+    /**
+     * 开启悬浮框
+     */
+    private void openFloatView() {
+        if(mFloatMenu==null) {
+            itemList.clear();
+            final boolean isOpenYh = AccessibilityAutoCommentAndClickLikeService.isOpenYh;
+            FloatItem floatItem1 = new FloatItem("养号模式（" + (isOpenYh ? "开" : "关") + "）", Color.BLACK, getResources().getColor(R.color.normal_gray), BitmapFactory.decodeResource(getResources(), R.mipmap.dy_logo));
+            FloatItem floatItem2 = new FloatItem("直播模式（" + (isOpenYh ? "关" : "开") + "）", Color.BLACK, getResources().getColor(R.color.normal_gray), BitmapFactory.decodeResource(getResources(), R.mipmap.dy_logo));
+            itemList.add(floatItem1);
+            itemList.add(floatItem2);
+            mFloatMenu = new FloatLogoMenu.Builder()
+//                    .withContext(getApplicationContext())
+                      .withContext(mActivity.getApplication())//这个在7.0（包括7.0）以上以及大部分7.0以下的国产手机上需要用户授权，需要搭配<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+                    .logo(BitmapFactory.decodeResource(getResources(), R.mipmap.dy_logo))
+                    .drawCicleMenuBg(true)
+                    .backMenuColor(0xffe4e3e1)
+                    .setBgDrawable(new ColorDrawable(Color.parseColor("#fa2233")))
+                    //这个背景色需要和logo的背景色一致
+                    .setFloatItems(itemList)
+                    .defaultLocation(FloatLogoMenu.LEFT)
+                    .drawRedPointNum(false)
+                    .showWithListener(new FloatMenuView.OnMenuClickListener() {
+                        @Override
+                        public void onItemClick(int position, String title) {
+                            if (position == 0) {
+                                if (AccessibilityAutoCommentAndClickLikeService.isOpenYh) {
+                                    showTs("已经是养号模式了");
+                                    return;
+                                } else {
+                                    AccessibilityAutoCommentAndClickLikeService.isOpenYh = true;
+                                    switchIsOpenYh.setChecked(AccessibilityAutoCommentAndClickLikeService.isOpenYh);
+                                    showTs("已切换到养号模式");
+                                }
+                            } else if (position == 1) {
+                                if (!AccessibilityAutoCommentAndClickLikeService.isOpenYh) {
+                                    showTs("已经是直播模式了");
+                                    return;
+                                } else {
+                                    AccessibilityAutoCommentAndClickLikeService.isOpenYh = false;
+                                    switchIsOpenYh.setChecked(AccessibilityAutoCommentAndClickLikeService.isOpenYh);
+                                    showTs("已切换到直播模式");
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void dismiss() {
+
+                        }
+                    });
+        }
     }
 
 
