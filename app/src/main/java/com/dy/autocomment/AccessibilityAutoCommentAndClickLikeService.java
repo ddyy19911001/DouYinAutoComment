@@ -67,6 +67,7 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     public static int viewedVideoCount=0;//已观看的视频总数
     private String headOfRedBagSenderId="com.ss.android.ugc.aweme:id/blr";//中间大圆形倒计时的id
     private String qiangId="com.ss.android.ugc.aweme:id/fgu";//抢字id
+    private String updateCancleBtId="com.ss.android.ugc.aweme:id/ctq";//更新提示的取消按钮id
     private boolean isClickingLeftTop=false;
     private long lastClickLivingLikeTime=0;//上次直播点赞时间
     private long LivingLikeClickBetweenTime=60*1000;//一分钟给主播点赞一次
@@ -100,16 +101,21 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
             LogUtils.v("已关闭辅助");
             return;
         }
+        closeUpdateDialog();
         if (!isOpenYh) {
             if(isClickZan){
+                LogUtils.i("正在点赞");
                 return;
             }
             if (isSwiping) {
+                LogUtils.i("正在滑动下一个直播间");
                 return;
             }
             if(isOpenClickLikeForever){
                 doClickLikeInLivingRoomForever();
                 return;
+            }else{
+                LogUtils.i("无限点赞已关闭");
             }
             List<AccessibilityNodeInfo> node = findNodesById(livingRoomTopRightPeopleLinearId);
             if(isOk(node)&&node.get(0)!=null&&nowState==NORMAL){
@@ -349,6 +355,15 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
 
     }
 
+
+    public void closeUpdateDialog(){
+        List<AccessibilityNodeInfo> nodeCancleBt = findNodesById(updateCancleBtId);
+        if(isOk(nodeCancleBt)){
+            nodeCancleBt.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);
+            LogUtils.i("关闭更新提示");
+        }
+    }
+
     private void doClickLikeInLivingRoomForever() {
         isClickZan=true;
         new Thread(){
@@ -363,6 +378,7 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                     }
                 }
                 lastClickLivingLikeTime=System.currentTimeMillis();
+                isSwiping=false;
                 isClickZan=false;
             }
         }.start();

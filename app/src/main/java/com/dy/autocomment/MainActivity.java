@@ -388,6 +388,8 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
                         }
                     });
             launchDouYin();
+        }else{
+            launchDouYin();
         }
     }
 
