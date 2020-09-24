@@ -69,6 +69,7 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
     private boolean CanShowFloat=false;
     private Intent intent;
     private MyNotifyService.MyWorkService workService;
+    private Switch switchIsOpenLikeForever;
 
     @Override
     public int setLayout() {
@@ -153,6 +154,7 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
         switchIsAddRandom=findViewById(R.id.s_is_add_random);
         switchIsSingleLivingRoom=findViewById(R.id.s_is_single_living_room);
         switchIsAutoClickLike=findViewById(R.id.s_is_auto_click_like);
+        switchIsOpenLikeForever=findViewById(R.id.s_is_open_zb_like_forever);
         tvResults =findViewById(R.id.tv_results);
         etYhBeTime =findViewById(R.id.et_yh_between_time);
         etLikePoint =findViewById(R.id.et_like_point);
@@ -177,6 +179,12 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 AccessibilityAutoCommentAndClickLikeService.isSwitchOpen=switchIsOpen.isChecked();
+            }
+        });
+        switchIsOpenLikeForever.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                AccessibilityAutoCommentAndClickLikeService.isOpenClickLikeForever=switchIsOpenLikeForever.isChecked();
             }
         });
         switchIsAutoClickLike.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -360,6 +368,17 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
                                 AccessibilityAutoCommentAndClickLikeService.isSingleLivingRoomComment=switchIsSingleLivingRoom.isChecked();
                                 itemList.get(3).setTitle("轮换:" + (AccessibilityAutoCommentAndClickLikeService.isSingleLivingRoomComment ? "关" : "开"));
                                 mFloatMenu.openMenu();
+                            }else if(position==4) {
+                                if(AccessibilityAutoCommentAndClickLikeService.isOpenClickLikeForever){
+                                    switchIsOpenLikeForever.setChecked(false);
+                                    showTs("已关闭直播间无限点赞");
+                                }else{
+                                    switchIsOpenLikeForever.setChecked(true);
+                                    showTs("已开启直播间无限点赞");
+                                }
+                                AccessibilityAutoCommentAndClickLikeService.isOpenClickLikeForever=switchIsOpenLikeForever.isChecked();
+                                itemList.get(4).setTitle("人气:" + (AccessibilityAutoCommentAndClickLikeService.isOpenClickLikeForever ? "开" : "关"));
+                                mFloatMenu.openMenu();
                             }
                         }
 
@@ -377,14 +396,17 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
         final boolean isOpenYh = AccessibilityAutoCommentAndClickLikeService.isOpenYh;
         final boolean isSwitchOpen = AccessibilityAutoCommentAndClickLikeService.isSwitchOpen;
         final boolean isSingleMode = AccessibilityAutoCommentAndClickLikeService.isSingleLivingRoomComment;
+        final boolean isLikeForever = AccessibilityAutoCommentAndClickLikeService.isOpenClickLikeForever;
         FloatItem floatItem1 = new FloatItem("状态:" + (isSwitchOpen ? "开" : "关") , Color.WHITE, getResources().getColor(R.color.normal_gray), BitmapFactory.decodeResource(getResources(), R.mipmap.ic_is_open));
         FloatItem floatItem2 = new FloatItem("养号:" + (isOpenYh ? "开" : "关") , Color.WHITE, getResources().getColor(R.color.normal_gray), BitmapFactory.decodeResource(getResources(), R.mipmap.ic_video));
         FloatItem floatItem3 = new FloatItem("吸粉:" + (isOpenYh ? "关" : "开") , Color.WHITE, getResources().getColor(R.color.normal_gray), BitmapFactory.decodeResource(getResources(), R.mipmap.ic_living));
         FloatItem floatItem4 = new FloatItem("轮换:" + (isSingleMode ? "关" : "开") , Color.WHITE, getResources().getColor(R.color.normal_gray), BitmapFactory.decodeResource(getResources(), R.mipmap.ic_switch));
+        FloatItem floatItem5 = new FloatItem("人气:" + (isLikeForever ? "开" : "关") , Color.WHITE, getResources().getColor(R.color.normal_gray), BitmapFactory.decodeResource(getResources(), R.mipmap.ic_hot));
         itemList.add(floatItem1);
         itemList.add(floatItem2);
         itemList.add(floatItem3);
         itemList.add(floatItem4);
+        itemList.add(floatItem5);
     }
 
 

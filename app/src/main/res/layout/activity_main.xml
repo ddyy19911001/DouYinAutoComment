@@ -154,7 +154,16 @@
             android:id="@+id/s_is_auto_click_like"
             />
     </LinearLayout>
-
+    <Switch
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="直播间无限点赞"
+        android:visibility="visible"
+        android:switchPadding="10dp"
+        android:layout_marginTop="15dp"
+        android:checked="false"
+        android:id="@+id/s_is_open_zb_like_forever"
+        />
     <Switch
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

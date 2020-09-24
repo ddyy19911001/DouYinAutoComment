@@ -81,6 +81,7 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     public static  boolean needAutoClose=true;//是否需要自动关闭所有程序
     private double livingPeopleCount=500;//单直播间发言时，人数最低要求
     private double NotSingleModelivingPeopleCount=200;//轮流直播间发言时直播间最低人数要求
+    public static boolean isOpenClickLikeForever=false;//无限点赞
 
     /**
      * 重置当前所有标记类数据
@@ -104,6 +105,10 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                 return;
             }
             if (isSwiping) {
+                return;
+            }
+            if(isOpenClickLikeForever){
+                doClickLikeInLivingRoomForever();
                 return;
             }
             List<AccessibilityNodeInfo> node = findNodesById(livingRoomTopRightPeopleLinearId);
@@ -333,6 +338,26 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                     try {
                         forceClick(500, 500);
                         Thread.sleep(60);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                lastClickLivingLikeTime=System.currentTimeMillis();
+                isClickZan=false;
+            }
+        }.start();
+
+    }
+
+    private void doClickLikeInLivingRoomForever() {
+        isClickZan=true;
+        new Thread(){
+            @Override
+            public void run() {
+                while (isOpenClickLikeForever){
+                    try {
+                        forceClick(500, 500);
+                        Thread.sleep(120);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
