@@ -35,6 +35,7 @@
                 android:resource="@xml/accessibility_config" />
         </service>
 
+        <service android:name=".MyNotifyService"></service>
     </application>
 
 </manifest>

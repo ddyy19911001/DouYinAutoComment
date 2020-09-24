@@ -5,6 +5,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -13,7 +14,10 @@ import android.widget.Toast;
 import com.vise.utils.assist.RandomUtil;
 
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Random;
 
 import yin.deng.normalutils.utils.DownTimer;
 import yin.deng.normalutils.utils.LogUtils;
@@ -43,6 +47,8 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     public boolean isPauseTimer=true;
     AccessibilityEvent mAccessibilityEvent;
     public static boolean isSwitchOpen=false;//是否开启辅助
+    public static boolean isAutoClickLike=true;//是否开启直播间自动点赞模式
+    public static boolean isSingleLivingRoomComment=true;//是否只在同一直播间进行评论
     private DownTimer timer;
     public String enterMainAcTag="com.ss.android.ugc.aweme:id/dwq";//视频发布的左下角昵称id
     public String clickEnterInLivingRoom="com.ss.android.ugc.aweme:id/dbc";//直播视频的底部LinearLayoutId
@@ -50,12 +56,13 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     private String commentIsOpenStr="com.ss.android.ugc.aweme:id/dfz";//评论弹框列表条目id
     private String commentEditTextStr="com.ss.android.ugc.aweme:id/ady";//软键盘弹起后的评论输入框id
     private String sendBtStr="com.ss.android.ugc.aweme:id/aeg";//发送按钮的id
-    private String livingRoomTopRightPeopleLinearId="com.ss.android.ugc.aweme:id/iso";//直播间右上角的观众父容器
-    private String editTextParenetId="com.ss.android.ugc.aweme:id/ba7";//输入框父容器id
+    private String livingRoomTopRightPeopleLinearId="com.ss.android.ugc.aweme:id/e6q";//直播间右上角的观众人数框
+    private String livingTopicId="com.ss.android.ugc.aweme:id/bsw";//直播间话题id
+    private String editTextParenetId="com.ss.android.ugc.aweme:id/b4f";//输入框父容器id
     private String redBagRootId="com.ss.android.ugc.aweme:id/fw0";//装福袋和红包的父容器
     private boolean isSwiping=false;
     public static int commentCount=0;
-    public static boolean isOpenYh=true;//是否开启养号功能
+    public static boolean isOpenYh=false;//是否开启养号功能
     private boolean isClickingLike=false;
     public static int viewedVideoCount=0;//已观看的视频总数
     private String headOfRedBagSenderId="com.ss.android.ugc.aweme:id/blr";//中间大圆形倒计时的id
@@ -70,6 +77,10 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     private boolean isKillSelfDoing=false;
     public static long sendLivingCommentDelay=6000;//每隔5秒发一条评论
     private int sendLivingCommentCount=0;//单个直播间发送的总评论数
+    public static  boolean needRandWords=true;//是否需要随机字符串
+    public static  boolean needAutoClose=true;//是否需要自动关闭所有程序
+    private double livingPeopleCount=500;//单直播间发言时，人数最低要求
+    private double NotSingleModelivingPeopleCount=200;//轮流直播间发言时直播间最低人数要求
 
     /**
      * 重置当前所有标记类数据
@@ -77,6 +88,9 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     public static void refreshNowData() {
 
     }
+
+
+    SimpleDateFormat format=new SimpleDateFormat("HH");
 
     @Override
     public void onAccessibilityEvent(final AccessibilityEvent event) {
@@ -89,18 +103,84 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
             if(isClickZan){
                 return;
             }
-            boolean isLivingRoom=findIsLivingRoom();
-            if(isLivingRoom&&nowState==NORMAL){
-                //如果是直播间，执行直播的对应任务
-                if(System.currentTimeMillis()-lastClickLivingLikeTime>=LivingLikeClickBetweenTime){
-                    doClickLikeInLivingRoom();
-                }else {
-                    long betweenTime=System.currentTimeMillis()- lastclickBottomLinearTime;
-                    if( betweenTime<=sendLivingCommentDelay) {
+            if (isSwiping) {
+                return;
+            }
+            List<AccessibilityNodeInfo> node = findNodesById(livingRoomTopRightPeopleLinearId);
+            if(isOk(node)&&node.get(0)!=null&&nowState==NORMAL){
+                LogUtils.i("进入了直播间");
+                if(needAutoClose){
+                    String nowHour=format.format(new Date());
+                    int nowHourNum=Integer.parseInt(nowHour);
+                    if(nowHourNum>=3&&nowHourNum<6) {
+                        LogUtils.i("当前时间凌晨3点-6点之间，自动重启手机杀进程");
+                        isKillSelfDoing = true;
+                        killAll(true);
+                        isKillSelfDoing = false;
                         return;
                     }
-                    LogUtils.i("时间差："+betweenTime+",预设时间差："+sendLivingCommentDelay);
-                    doLivingTask();
+                }
+                CharSequence personCount = node.get(0).getText();
+                if(TextUtils.isEmpty(personCount)){
+                    return;
+                }
+                String personCountStr= (String) personCount;
+                LogUtils.i("在线用户数："+personCountStr);
+                boolean isUsefulLivingRoom=false;//是否是有用的直播间
+                boolean isCountOk=false;//人数是否达标
+                if(personCountStr.endsWith("万")){
+                    isCountOk=true;
+                }else{
+                    double personCountNum=Double.parseDouble(personCountStr);
+                    if(personCountNum>=livingPeopleCount){
+                        isCountOk=true;
+                    }
+                    if(!isSingleLivingRoomComment){
+                        if(personCountNum>=NotSingleModelivingPeopleCount){
+                            isCountOk=true;
+                        }
+                    }
+                }
+                boolean isTopicOk=false;//话题是否达标
+                List<AccessibilityNodeInfo> topicNode = findNodesById(livingTopicId);
+                if(isOk(topicNode)&&topicNode.get(0)!=null){
+                    String topicStr= (String) topicNode.get(0).getText();
+                    if(topicStr!=null&&(topicStr.contains("涨")||
+                            topicStr.contains("人气")||
+                            topicStr.contains("粉"))||
+                            topicStr.contains("抱团")||
+                            topicStr.contains("互")||
+                            topicStr.contains("交友")||
+                            topicStr.contains("友")||
+                            topicStr.contains("朋友")||
+                            topicStr.contains("热门")){
+                        isTopicOk=true;
+                    }
+                }
+                isUsefulLivingRoom=isTopicOk&&isCountOk;
+                //如果是直播间，执行直播的对应任务
+                if(isAutoClickLike&&isUsefulLivingRoom&&System.currentTimeMillis()-lastClickLivingLikeTime>=LivingLikeClickBetweenTime){
+                    doClickLikeInLivingRoom();
+                }else {
+                    if(isUsefulLivingRoom) {
+                        long betweenTime = System.currentTimeMillis() - lastclickBottomLinearTime;
+                        if (betweenTime <= sendLivingCommentDelay) {
+                            return;
+                        }
+                        LogUtils.i("时间差：" + betweenTime + ",预设时间差：" + sendLivingCommentDelay);
+                        doLivingTask();
+                    }else{
+                        showTs("在线人数或话题未满足，换房间");
+                        isSwiping = true;
+                        openNextOne();
+                        new Handler().postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                isSwiping = false;
+                                nowState = NORMAL;
+                            }
+                        }, 3000);
+                    }
                 }
             }
             return;
@@ -117,7 +197,7 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                 }
                 if(lickCount>=maxClickLikeSize){
                     isKillSelfDoing=true;
-                    killAll();
+                    killAll(false);
                     isKillSelfDoing=false;
                     return;
                 }
@@ -297,9 +377,24 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
             Thread.sleep(1000);
             forceClick(500, 500);
             Thread.sleep(1000);
-            isLivingTaskDoing=false;
-            sendLivingCommentCount++;
-            showTs("已发送评论"+sendLivingCommentCount+"条");
+            if(isSingleLivingRoomComment) {
+                isLivingTaskDoing = false;
+                sendLivingCommentCount++;
+                showTs("已发送评论" + sendLivingCommentCount + "条");
+            }else{
+                isSwiping = true;
+                openNextOne();
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        isSwiping = false;
+                        isLivingTaskDoing = false;
+                        nowState = NORMAL;
+                    }
+                }, 2000);
+                sendLivingCommentCount++;
+                showTs("已发送评论" + sendLivingCommentCount + "条");
+            }
         }else{
             //输入框未出现,重新点击底部
             isLivingTaskDoing=false;
@@ -437,27 +532,52 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     /*
      * 杀死后台进程
      */
-    public void killAll(){
-        forceBack();
+    public void killAll(boolean needReOpenPhone){
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
                 forceBack();
             }
-        }, 100);
+        }, 1000);
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
+                forceBack();
+            }
+        }, 1100);
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                forceBack();
+            }
+        }, 1300);
+        if(needReOpenPhone) {
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    reOpenPhone();
+                }
+            }, 5000);
+        }else{
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
                 stopSelf();
                 android.os.Process.killProcess(android.os.Process.myPid());    //获取PID
                 System.exit(0);
-            }
-        }, 1000);
+                }
+            }, 5000);
+        }
     }
 
 
 
 
+    private void reOpenPhone() {
+        LogUtils.v("关机重启");
+        String cmd="reboot";
+        doCmd(cmd);
+    }
 
     private void forceBack() {
         LogUtils.v("点击返回键");
@@ -559,8 +679,14 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     private String getLiveCommentText() {
         String [] datas=getResources().getStringArray(R.array.comments);
         String nowComment=datas[RandomUtil.getRandom(datas.length)];
+        if(needRandWords){
+            String x=RandomUtil.getRandomNumbersAndLetters(6);
+            nowComment+=x;
+        }
         return nowComment;
     }
+
+
 
 
 

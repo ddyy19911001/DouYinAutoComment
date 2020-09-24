@@ -23,7 +23,7 @@
     <EditText
         android:layout_marginTop="10dp"
         android:id="@+id/et_live_between_time"
-        android:hint="直播间评论间隔（s）默：8s"
+        android:hint="直播间评论间隔（s）默：6s"
         android:textSize="14sp"
         android:gravity="center"
         android:layout_width="match_parent"
@@ -78,24 +78,83 @@
         android:maxLength="3"
         />
 
-    <Switch
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:gravity="center"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="开启监听"
-        android:switchPadding="10dp"
+        android:orientation="horizontal"
         android:layout_marginTop="15dp"
-        android:checked="true"
-        android:id="@+id/s_is_open"
-        />
-    <Switch
-        android:layout_width="wrap_content"
+        >
+        <Switch
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="开启监听"
+            android:switchPadding="10dp"
+            android:checked="false"
+            android:id="@+id/s_is_open"
+            android:layout_marginRight="30dp"
+            />
+        <Switch
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="养号点赞/直播吸粉"
+            android:switchPadding="10dp"
+            android:checked="true"
+            android:id="@+id/s_is_open_yh"
+            />
+    </LinearLayout>
+    <LinearLayout
+        android:gravity="center"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="养号点赞评论"
-        android:switchPadding="10dp"
+        android:orientation="horizontal"
         android:layout_marginTop="15dp"
-        android:checked="true"
-        android:id="@+id/s_is_open_yh"
-        />
+        >
+        <Switch
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="加随机字符"
+            android:switchPadding="10dp"
+            android:checked="true"
+            android:layout_marginRight="30dp"
+            android:id="@+id/s_is_add_random"
+            />
+        <Switch
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="定时关闭(03:00)"
+            android:switchPadding="10dp"
+            android:checked="true"
+            android:id="@+id/s_is_auto_close"
+            />
+    </LinearLayout>
+
+    <LinearLayout
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="15dp"
+        >
+        <Switch
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="单间吸粉/轮换吸粉"
+            android:switchPadding="10dp"
+            android:checked="true"
+            android:layout_marginRight="30dp"
+            android:id="@+id/s_is_single_living_room"
+            />
+        <Switch
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="直播间点赞"
+            android:switchPadding="10dp"
+            android:checked="true"
+            android:id="@+id/s_is_auto_click_like"
+            />
+    </LinearLayout>
+
     <Switch
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

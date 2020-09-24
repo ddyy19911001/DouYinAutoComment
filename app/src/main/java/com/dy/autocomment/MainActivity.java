@@ -8,11 +8,15 @@ import android.app.ActivityManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
@@ -23,6 +27,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.dy.fastframework.activity.BaseActivity;
+import com.dy.fastframework.service.NotifyService;
 import com.dy.fastframework.view.CommonMsgDialog;
 import com.imuxuan.floatingview.FloatingView;
 import com.yw.game.floatmenu.FloatItem;
@@ -31,15 +36,18 @@ import com.yw.game.floatmenu.FloatMenuView;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
+import yin.deng.normalutils.utils.LogUtils;
 import yin.deng.normalutils.utils.MyUtils;
 import yin.deng.normalutils.utils.NoDoubleClickListener;
 import yin.deng.normalutils.view.MsgDialog;
 
-public class MainActivity extends BaseActivity {
+public class MainActivity extends BaseActivity implements ServiceConnection {
 
+    private static final int REQUEST_OVERLAY = 3211;
     private Button btStart;
     private Switch switchIsOpen;
     private Switch switchIsOpenYh;
@@ -54,6 +62,13 @@ public class MainActivity extends BaseActivity {
     private EditText etLiveBetweenTime;
     private List<FloatItem> itemList=new ArrayList<>();
     private FloatLogoMenu mFloatMenu;
+    private Switch switchIsAddRandom;
+    private Switch switchIsAutoClose;
+    private Switch switchIsSingleLivingRoom;
+    private Switch switchIsAutoClickLike;
+    private boolean CanShowFloat=false;
+    private Intent intent;
+    private MyNotifyService.MyWorkService workService;
 
     @Override
     public int setLayout() {
@@ -134,6 +149,10 @@ public class MainActivity extends BaseActivity {
         btStart=findViewById(R.id.bt_start);
         switchIsOpen=findViewById(R.id.s_is_open);
         switchIsOpenYh=findViewById(R.id.s_is_open_yh);
+        switchIsAutoClose=findViewById(R.id.s_is_auto_close);
+        switchIsAddRandom=findViewById(R.id.s_is_add_random);
+        switchIsSingleLivingRoom=findViewById(R.id.s_is_single_living_room);
+        switchIsAutoClickLike=findViewById(R.id.s_is_auto_click_like);
         tvResults =findViewById(R.id.tv_results);
         etYhBeTime =findViewById(R.id.et_yh_between_time);
         etLikePoint =findViewById(R.id.et_like_point);
@@ -144,6 +163,10 @@ public class MainActivity extends BaseActivity {
 
     @Override
     public void initFirst() {
+        intent = new Intent();
+        intent.setClass(this, MyNotifyService.class);
+        startService(intent);
+        bindService(intent,this,BIND_AUTO_CREATE);
         try {
             OutputStream os = Runtime.getRuntime().exec("su").getOutputStream();
         } catch (IOException e) {
@@ -156,10 +179,34 @@ public class MainActivity extends BaseActivity {
                 AccessibilityAutoCommentAndClickLikeService.isSwitchOpen=switchIsOpen.isChecked();
             }
         });
+        switchIsAutoClickLike.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                AccessibilityAutoCommentAndClickLikeService.isAutoClickLike=switchIsAutoClickLike.isChecked();
+            }
+        });
+        switchIsSingleLivingRoom.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                AccessibilityAutoCommentAndClickLikeService.isSingleLivingRoomComment=switchIsSingleLivingRoom.isChecked();
+            }
+        });
         switchIsOpenYh.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 AccessibilityAutoCommentAndClickLikeService.isOpenYh=switchIsOpenYh.isChecked();
+            }
+        });
+        switchIsAutoClose.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                AccessibilityAutoCommentAndClickLikeService.needAutoClose=switchIsAutoClose.isChecked();
+            }
+        });
+        switchIsAddRandom.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                AccessibilityAutoCommentAndClickLikeService.needRandWords=switchIsAddRandom.isChecked();
             }
         });
         btStart.setOnClickListener(new NoDoubleClickListener() {
@@ -188,11 +235,58 @@ public class MainActivity extends BaseActivity {
                 BaseApp.getSharedPreferenceUtil().saveInt("count",0);
                 BaseApp.getSharedPreferenceUtil().saveInt("commentCount",0);
                 BaseApp.getSharedPreferenceUtil().saveInt("viewedVideoCount",0);
-                launchDouYin();
-//                openFloatView();
+                RequestOverlayPermission();
             }
         });
     }
+
+    @Override
+    public void onDestroy() {
+        unbindService(this);
+        stopService(intent);
+        super.onDestroy();
+    }
+
+    // 动态请求悬浮窗权限
+    private void RequestOverlayPermission()
+    {
+        if (Build.VERSION.SDK_INT >= 23)
+        {
+            if (!Settings.canDrawOverlays(this))
+            {
+                String ACTION_MANAGE_OVERLAY_PERMISSION = "android.settings.action.MANAGE_OVERLAY_PERMISSION";
+                Intent intent = new Intent(ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
+                startActivityForResult(intent, REQUEST_OVERLAY);
+            }
+            else
+            {
+               CanShowFloat = true;
+                openFloatView();
+            }
+        }
+    }
+
+    /** Activity执行结果，回调函数 */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        // Toast.makeText(activity, "onActivityResult设置权限！", Toast.LENGTH_SHORT).show();
+        if (requestCode == REQUEST_OVERLAY)		// 从应用权限设置界面返回
+        {
+            if(resultCode == RESULT_OK)
+            {
+                LogUtils.i("悬浮窗的权限ok了");
+               CanShowFloat = true;		// 设置标识为可显示悬浮窗
+                openFloatView();
+            }
+            else CanShowFloat = false;
+        }
+    }
+
+
+
 
 
     /**
@@ -200,19 +294,13 @@ public class MainActivity extends BaseActivity {
      */
     private void openFloatView() {
         if(mFloatMenu==null) {
-            itemList.clear();
-            final boolean isOpenYh = AccessibilityAutoCommentAndClickLikeService.isOpenYh;
-            FloatItem floatItem1 = new FloatItem("养号模式（" + (isOpenYh ? "开" : "关") + "）", Color.BLACK, getResources().getColor(R.color.normal_gray), BitmapFactory.decodeResource(getResources(), R.mipmap.dy_logo));
-            FloatItem floatItem2 = new FloatItem("直播模式（" + (isOpenYh ? "关" : "开") + "）", Color.BLACK, getResources().getColor(R.color.normal_gray), BitmapFactory.decodeResource(getResources(), R.mipmap.dy_logo));
-            itemList.add(floatItem1);
-            itemList.add(floatItem2);
+            initData();
             mFloatMenu = new FloatLogoMenu.Builder()
-//                    .withContext(getApplicationContext())
-                      .withContext(mActivity.getApplication())//这个在7.0（包括7.0）以上以及大部分7.0以下的国产手机上需要用户授权，需要搭配<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
-                    .logo(BitmapFactory.decodeResource(getResources(), R.mipmap.dy_logo))
-                    .drawCicleMenuBg(true)
+                      .withContext(workService.getService().getApplication())//这个在7.0（包括7.0）以上以及大部分7.0以下的国产手机上需要用户授权，需要搭配<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+                    .logo(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_main))
+                    .drawCicleMenuBg(false)
                     .backMenuColor(0xffe4e3e1)
-                    .setBgDrawable(new ColorDrawable(Color.parseColor("#fa2233")))
+                    .setBgDrawable(new ColorDrawable(Color.parseColor("#ebebeb")))
                     //这个背景色需要和logo的背景色一致
                     .setFloatItems(itemList)
                     .defaultLocation(FloatLogoMenu.LEFT)
@@ -220,24 +308,58 @@ public class MainActivity extends BaseActivity {
                     .showWithListener(new FloatMenuView.OnMenuClickListener() {
                         @Override
                         public void onItemClick(int position, String title) {
-                            if (position == 0) {
+                            if(position==0) {
+                                if(AccessibilityAutoCommentAndClickLikeService.isSwitchOpen){
+                                    switchIsOpen.setChecked(false);
+                                    showTs("已停止所有任务");
+                                }else{
+                                    switchIsOpen.setChecked(true);
+                                    showTs("任务开始");
+                                }
+                                AccessibilityAutoCommentAndClickLikeService.isSwitchOpen=switchIsOpen.isChecked();
+                                itemList.get(0).setTitle("状态:" + (AccessibilityAutoCommentAndClickLikeService.isSwitchOpen ? "开" : "关"));
+                                mFloatMenu.openMenu();
+                            }else if (position == 1) {
                                 if (AccessibilityAutoCommentAndClickLikeService.isOpenYh) {
                                     showTs("已经是养号模式了");
                                     return;
                                 } else {
                                     AccessibilityAutoCommentAndClickLikeService.isOpenYh = true;
                                     switchIsOpenYh.setChecked(AccessibilityAutoCommentAndClickLikeService.isOpenYh);
+                                    String nowYhStr="养号:" + ( AccessibilityAutoCommentAndClickLikeService.isOpenYh  ? "开" : "关");
+                                    String nowXfStr="吸粉:" + ( AccessibilityAutoCommentAndClickLikeService.isOpenYh  ? "关" : "开");
+                                    LogUtils.i(nowYhStr);
+                                    itemList.get(1).setTitle(nowYhStr);
+                                    itemList.get(2).setTitle(nowXfStr);
                                     showTs("已切换到养号模式");
+                                    mFloatMenu.openMenu();
                                 }
-                            } else if (position == 1) {
+                            } else if (position == 2) {
                                 if (!AccessibilityAutoCommentAndClickLikeService.isOpenYh) {
-                                    showTs("已经是直播模式了");
+                                    showTs("已经是吸粉模式了");
                                     return;
                                 } else {
                                     AccessibilityAutoCommentAndClickLikeService.isOpenYh = false;
                                     switchIsOpenYh.setChecked(AccessibilityAutoCommentAndClickLikeService.isOpenYh);
                                     showTs("已切换到直播模式");
+                                    String nowYhStr="养号:" + ( AccessibilityAutoCommentAndClickLikeService.isOpenYh  ? "开" : "关");
+                                    String nowXfStr="吸粉:" + ( AccessibilityAutoCommentAndClickLikeService.isOpenYh  ? "关" : "开");
+                                    LogUtils.i(nowYhStr);
+                                    itemList.get(1).setTitle(nowYhStr);
+                                    itemList.get(2).setTitle(nowXfStr);
+                                    mFloatMenu.openMenu();
                                 }
+                            }else if(position==3) {
+                                if(AccessibilityAutoCommentAndClickLikeService.isSingleLivingRoomComment){
+                                    switchIsSingleLivingRoom.setChecked(false);
+                                    showTs("当前模式：多直播间循环评论");
+                                }else{
+                                    switchIsSingleLivingRoom.setChecked(true);
+                                    showTs("当前模式：单直播间轮流评论");
+                                }
+                                AccessibilityAutoCommentAndClickLikeService.isSingleLivingRoomComment=switchIsSingleLivingRoom.isChecked();
+                                itemList.get(3).setTitle("轮换:" + (AccessibilityAutoCommentAndClickLikeService.isSingleLivingRoomComment ? "关" : "开"));
+                                mFloatMenu.openMenu();
                             }
                         }
 
@@ -246,7 +368,23 @@ public class MainActivity extends BaseActivity {
 
                         }
                     });
+            launchDouYin();
         }
+    }
+
+    private void initData() {
+        itemList.clear();
+        final boolean isOpenYh = AccessibilityAutoCommentAndClickLikeService.isOpenYh;
+        final boolean isSwitchOpen = AccessibilityAutoCommentAndClickLikeService.isSwitchOpen;
+        final boolean isSingleMode = AccessibilityAutoCommentAndClickLikeService.isSingleLivingRoomComment;
+        FloatItem floatItem1 = new FloatItem("状态:" + (isSwitchOpen ? "开" : "关") , Color.WHITE, getResources().getColor(R.color.normal_gray), BitmapFactory.decodeResource(getResources(), R.mipmap.ic_is_open));
+        FloatItem floatItem2 = new FloatItem("养号:" + (isOpenYh ? "开" : "关") , Color.WHITE, getResources().getColor(R.color.normal_gray), BitmapFactory.decodeResource(getResources(), R.mipmap.ic_video));
+        FloatItem floatItem3 = new FloatItem("吸粉:" + (isOpenYh ? "关" : "开") , Color.WHITE, getResources().getColor(R.color.normal_gray), BitmapFactory.decodeResource(getResources(), R.mipmap.ic_living));
+        FloatItem floatItem4 = new FloatItem("轮换:" + (isSingleMode ? "关" : "开") , Color.WHITE, getResources().getColor(R.color.normal_gray), BitmapFactory.decodeResource(getResources(), R.mipmap.ic_switch));
+        itemList.add(floatItem1);
+        itemList.add(floatItem2);
+        itemList.add(floatItem3);
+        itemList.add(floatItem4);
     }
 
 
@@ -264,5 +402,17 @@ public class MainActivity extends BaseActivity {
             e.printStackTrace();
             showTs("启动失败，请确认您安装了抖音");
         }
+    }
+
+    @Override
+    public void onServiceConnected(ComponentName name, IBinder service) {
+        LogUtils.i("服务已开启");
+        showTs("后台服务已开启");
+        workService = ((MyNotifyService.MyWorkService) service);
+    }
+
+    @Override
+    public void onServiceDisconnected(ComponentName name) {
+
     }
 }
