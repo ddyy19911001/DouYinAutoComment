@@ -70,6 +70,7 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
     private Intent intent;
     private MyNotifyService.MyWorkService workService;
     private Switch switchIsOpenLikeForever;
+    private Switch switchIsOpenLikeBack;
 
     @Override
     public int setLayout() {
@@ -161,6 +162,7 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
         etMaxLikeSize =findViewById(R.id.et_max_like_size);
         etCommentPoint =findViewById(R.id.et_comment_point);
         etLiveBetweenTime =findViewById(R.id.et_live_between_time);
+        switchIsOpenLikeBack =findViewById(R.id.s_is_open_like_back);
     }
 
     @Override
@@ -191,6 +193,12 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 AccessibilityAutoCommentAndClickLikeService.isAutoClickLike=switchIsAutoClickLike.isChecked();
+            }
+        });
+        switchIsOpenLikeBack.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                AccessibilityAutoCommentAndClickLikeService.isOpenBackLikeMode=switchIsOpenLikeBack.isChecked();
             }
         });
         switchIsSingleLivingRoom.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -329,34 +337,37 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
                                 mFloatMenu.openMenu();
                             }else if (position == 1) {
                                 if (AccessibilityAutoCommentAndClickLikeService.isOpenYh) {
-                                    showTs("已经是养号模式了");
-                                    return;
-                                } else {
+                                    AccessibilityAutoCommentAndClickLikeService.isOpenYh = false;
+                                    switchIsOpenYh.setChecked(AccessibilityAutoCommentAndClickLikeService.isOpenYh);
+                                    String nowYhStr="养号：开";
+                                    String nowXfStr="吸粉：开";
+                                    String nowStr=AccessibilityAutoCommentAndClickLikeService.isOpenYh?nowYhStr:nowXfStr;
+                                    LogUtils.i(nowYhStr);
+                                    itemList.get(1).setTitle(nowStr);
+                                    showTs("已切换到吸粉模式");
+                                    mFloatMenu.openMenu();
+                                }else{
                                     AccessibilityAutoCommentAndClickLikeService.isOpenYh = true;
                                     switchIsOpenYh.setChecked(AccessibilityAutoCommentAndClickLikeService.isOpenYh);
-                                    String nowYhStr="养号:" + ( AccessibilityAutoCommentAndClickLikeService.isOpenYh  ? "开" : "关");
-                                    String nowXfStr="吸粉:" + ( AccessibilityAutoCommentAndClickLikeService.isOpenYh  ? "关" : "开");
+                                    String nowYhStr="养号：开";
+                                    String nowXfStr="吸粉：开";
+                                    String nowStr=AccessibilityAutoCommentAndClickLikeService.isOpenYh?nowYhStr:nowXfStr;
                                     LogUtils.i(nowYhStr);
-                                    itemList.get(1).setTitle(nowYhStr);
-                                    itemList.get(2).setTitle(nowXfStr);
+                                    itemList.get(1).setTitle(nowStr);
                                     showTs("已切换到养号模式");
                                     mFloatMenu.openMenu();
                                 }
                             } else if (position == 2) {
-                                if (!AccessibilityAutoCommentAndClickLikeService.isOpenYh) {
-                                    showTs("已经是吸粉模式了");
-                                    return;
-                                } else {
-                                    AccessibilityAutoCommentAndClickLikeService.isOpenYh = false;
-                                    switchIsOpenYh.setChecked(AccessibilityAutoCommentAndClickLikeService.isOpenYh);
-                                    showTs("已切换到直播模式");
-                                    String nowYhStr="养号:" + ( AccessibilityAutoCommentAndClickLikeService.isOpenYh  ? "开" : "关");
-                                    String nowXfStr="吸粉:" + ( AccessibilityAutoCommentAndClickLikeService.isOpenYh  ? "关" : "开");
-                                    LogUtils.i(nowYhStr);
-                                    itemList.get(1).setTitle(nowYhStr);
-                                    itemList.get(2).setTitle(nowXfStr);
-                                    mFloatMenu.openMenu();
+                                if(AccessibilityAutoCommentAndClickLikeService.isOpenBackLikeMode){
+                                    switchIsOpenLikeBack.setChecked(false);
+                                    showTs("赞回访已关闭");
+                                }else{
+                                    switchIsOpenLikeBack.setChecked(true);
+                                    showTs("赞回访已开启");
                                 }
+                                AccessibilityAutoCommentAndClickLikeService.isOpenBackLikeMode=switchIsOpenLikeBack.isChecked();
+                                itemList.get(2).setTitle("回访:" + (AccessibilityAutoCommentAndClickLikeService.isOpenBackLikeMode ? "关" : "开"));
+                                mFloatMenu.openMenu();
                             }else if(position==3) {
                                 if(AccessibilityAutoCommentAndClickLikeService.isSingleLivingRoomComment){
                                     switchIsSingleLivingRoom.setChecked(false);
@@ -399,9 +410,13 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
         final boolean isSwitchOpen = AccessibilityAutoCommentAndClickLikeService.isSwitchOpen;
         final boolean isSingleMode = AccessibilityAutoCommentAndClickLikeService.isSingleLivingRoomComment;
         final boolean isLikeForever = AccessibilityAutoCommentAndClickLikeService.isOpenClickLikeForever;
+        final boolean isOpenBackLikeMode = AccessibilityAutoCommentAndClickLikeService.isOpenBackLikeMode;
+        String nowYhStr="养号：开";
+        String nowXfStr="吸粉：开";
+        String nowStr=isOpenYh?nowYhStr:nowXfStr;
         FloatItem floatItem1 = new FloatItem("状态:" + (isSwitchOpen ? "开" : "关") , Color.WHITE, getResources().getColor(R.color.normal_gray), BitmapFactory.decodeResource(getResources(), R.mipmap.ic_is_open));
-        FloatItem floatItem2 = new FloatItem("养号:" + (isOpenYh ? "开" : "关") , Color.WHITE, getResources().getColor(R.color.normal_gray), BitmapFactory.decodeResource(getResources(), R.mipmap.ic_video));
-        FloatItem floatItem3 = new FloatItem("吸粉:" + (isOpenYh ? "关" : "开") , Color.WHITE, getResources().getColor(R.color.normal_gray), BitmapFactory.decodeResource(getResources(), R.mipmap.ic_living));
+        FloatItem floatItem2 = new FloatItem(nowStr, Color.WHITE, getResources().getColor(R.color.normal_gray), BitmapFactory.decodeResource(getResources(), R.mipmap.ic_like_png));
+        FloatItem floatItem3 = new FloatItem(("回访："+(isOpenBackLikeMode ? "开" : "关")) , Color.WHITE, getResources().getColor(R.color.normal_gray), BitmapFactory.decodeResource(getResources(), R.mipmap.ic_living));
         FloatItem floatItem4 = new FloatItem("轮换:" + (isSingleMode ? "关" : "开") , Color.WHITE, getResources().getColor(R.color.normal_gray), BitmapFactory.decodeResource(getResources(), R.mipmap.ic_switch));
         FloatItem floatItem5 = new FloatItem("人气:" + (isLikeForever ? "开" : "关") , Color.WHITE, getResources().getColor(R.color.normal_gray), BitmapFactory.decodeResource(getResources(), R.mipmap.ic_hot));
         itemList.add(floatItem1);

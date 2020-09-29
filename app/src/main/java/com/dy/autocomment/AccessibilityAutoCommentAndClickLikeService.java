@@ -1,16 +1,20 @@
 package com.dy.autocomment;
 
 import android.accessibilityservice.AccessibilityService;
+import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
+import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Toast;
 
+import com.dy.fastframework.view.CommonMsgDialog;
 import com.vise.utils.assist.RandomUtil;
 
 import java.io.OutputStream;
@@ -21,6 +25,7 @@ import java.util.Random;
 
 import yin.deng.normalutils.utils.DownTimer;
 import yin.deng.normalutils.utils.LogUtils;
+import yin.deng.normalutils.utils.MyUtils;
 
 
 /**
@@ -59,10 +64,14 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     private String livingRoomTopRightPeopleLinearId="com.ss.android.ugc.aweme:id/e6q";//直播间右上角的观众人数框
     private String livingTopicId="com.ss.android.ugc.aweme:id/bsw";//直播间话题id
     private String editTextParenetId="com.ss.android.ugc.aweme:id/b4f";//输入框父容器id
+    private String mainZanAcId="com.ss.android.ugc.aweme:id/dr8";//判断是否在赞页面标题id
+    private String itemNeedZanId="com.ss.android.ugc.aweme:id/e43";//需要点赞的人物昵称id
+    private String dyId="com.ss.android.ugc.aweme:id/g42";//是否在个人资料页动态按钮父布局LinearLayout的ID
+    private String lastDTPicId="com.ss.android.ugc.aweme:id/d0l";//最新的一条动态的封面图ID
     private String redBagRootId="com.ss.android.ugc.aweme:id/fw0";//装福袋和红包的父容器
     private boolean isSwiping=false;
     public static int commentCount=0;
-    public static boolean isOpenYh=false;//是否开启养号功能
+    public static boolean isOpenYh=true;//是否开启养号功能
     private boolean isClickingLike=false;
     public static int viewedVideoCount=0;//已观看的视频总数
     private String headOfRedBagSenderId="com.ss.android.ugc.aweme:id/blr";//中间大圆形倒计时的id
@@ -83,6 +92,12 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     private double livingPeopleCount=500;//单直播间发言时，人数最低要求
     private double NotSingleModelivingPeopleCount=200;//轮流直播间发言时直播间最低人数要求
     public static boolean isOpenClickLikeForever=false;//无限点赞
+    public static boolean isOpenBackLikeMode=false;//是否开启赞回访模式
+    private int nowIndex=0;//当前正则操作的回赞角标
+    private boolean isLikeBackDoing=false;//是否正在做赞回访操作
+    private boolean isReFind=false;
+    private String lastHeadName;//最底部的名字
+    private int backCount;//赞回访人数
 
     /**
      * 重置当前所有标记类数据
@@ -102,6 +117,11 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
             return;
         }
         closeUpdateDialog();
+        if(isOpenBackLikeMode){
+            //赞回访模式
+            doHfMode(event);
+            return;
+        }
         if (!isOpenYh) {
             if(isClickZan){
                 LogUtils.i("正在点赞");
@@ -332,6 +352,196 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                 //开始查找红包的弹框是否出现了，或者已抢完的弹框是否出现了
 
                 break;
+        }
+    }
+
+
+    /**
+     * 处理赞回访模式
+     * @param event
+     */
+    public static final int HF_NORMAL=0;//待命/完成状态
+    public static final int HF_FINDHEAD=1;//查找头像进行点击的状态
+    public static final int HF_FIND_DT=2;//查找动态进行点击状态
+    public static final int HF_FIND_LAST_DT=3;//查找最新一条动态进行点赞状态
+    public static final int HF_PAGE_OVER=4;//一页已经点击完成应该滑动的状态
+    public static final int HF_OVER=5;//全部任务完成状态
+    public  int nowHfType=HF_NORMAL;
+    private void doHfMode(AccessibilityEvent event) {
+        switch (nowHfType){
+            case HF_NORMAL:
+                List<AccessibilityNodeInfo> nodeIsInZanAc = findNodesById(mainZanAcId);
+                if(isOk(nodeIsInZanAc)&&nodeIsInZanAc.get(0)!=null&&"赞".equals(nodeIsInZanAc.get(0).getText().toString())) {
+                    LogUtils.i("任务开始");
+                    backCount=0;
+                    nowHfType = HF_FINDHEAD;
+                    isReFind=false;
+                    isLikeBackDoing=false;
+                    isSwiping=false;
+                    lastHeadName=null;
+                }else{
+                    LogUtils.i("当前页面不满足条件");
+                }
+                break;
+            case HF_FINDHEAD:
+                findHeadAndClick();
+                break;
+            case HF_FIND_DT:
+                findDtBtAndClick(false);
+                break;
+            case HF_FIND_LAST_DT:
+                LogUtils.i("最新的动态已经点赞");
+                findLastDt();
+                break;
+            case HF_PAGE_OVER:
+                switchNextOneTop();
+                break;
+            case HF_OVER:
+                showDialog("赞回访已全部完成，共计回访人数："+backCount+"人！");
+                break;
+        }
+    }
+
+    private void findHeadAndClick() {
+        if(isLikeBackDoing){
+            return;
+        }
+        List<AccessibilityNodeInfo> nodeHead = findNodesById(itemNeedZanId);
+        if(isOk(nodeHead)){
+            LogUtils.i("当前需要点赞的条目总数："+nodeHead.size()+"个");
+            if(nodeHead.size()>=1) {
+                String firstHeadName = nodeHead.get(1).getText().toString();
+                if (!MyUtils.isEmpty(firstHeadName)) {
+                    if (firstHeadName.equals(lastHeadName)) {
+                        //赞回访完毕了
+                        nowState = HF_OVER;
+                        LogUtils.w("赞回访完毕");
+                        return;
+                    }
+                }
+            }
+            isLikeBackDoing=true;
+            if(nowIndex==0) {
+                nowIndex = nodeHead.size() - 1;
+            }
+            Rect rect=new Rect();
+            nodeHead.get(nowIndex).getBoundsInScreen(rect);
+            int x=rect.centerX();
+            int y=rect.centerY();
+            if(y>2200){
+                nowIndex--;
+                nowHfType=HF_FINDHEAD;
+                isLikeBackDoing=false;
+                return;
+            }
+            forceClick(rect.centerX(),rect.centerY());
+            lastHeadName=nodeHead.get(nowIndex).getText().toString();
+            nowIndex--;
+            nowHfType=HF_FIND_DT;
+            //切入查找动态模式
+        }else{
+            try {
+                Thread.sleep(2000);
+                findHeadAndClick();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void findDtBtAndClick(boolean isInVoid) {
+        List<AccessibilityNodeInfo> nodeDyId = findNodesById(dyId);
+        LogUtils.i("找到个人资料页面了");
+        if(isOk(nodeDyId)){
+            Rect rect=new Rect();
+            nodeDyId.get(0).getBoundsInScreen(rect);
+            forceClick(rect.centerX(),rect.centerY());
+            //点击动态按钮
+            LogUtils.i("点击了动态按钮");
+            try {
+                Thread.sleep(500);
+                nowHfType=HF_FIND_LAST_DT;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }else{
+            if(isInVoid){
+                backToZanAc();
+                return;
+            }
+            try {
+                Thread.sleep(2000);
+                findDtBtAndClick(true);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void findLastDt() {
+        //最后一条动态已经点赞完毕
+        List<AccessibilityNodeInfo> mostNewNode = findNodesById(lastDTPicId);
+        if(isOk(mostNewNode)){
+            LogUtils.w("双击点赞");
+            isReFind=false;
+            //找到了最新的动态的封面图
+            doubleClickToLike(mostNewNode);
+            backCount++;
+        }else{
+            LogUtils.w("没找到最新动态");
+            //没有找到，再找一次
+            if(isReFind){
+                isReFind=false;
+                backToZanAc();
+                return;
+            }
+            try {
+                Thread.sleep(2000);
+                isReFind=true;
+                findLastDt();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void doubleClickToLike(List<AccessibilityNodeInfo> mostNewNode) {
+        Rect rect=new Rect();
+        mostNewNode.get(0).getBoundsInScreen(rect);
+        int x=rect.centerX();
+        int y=rect.centerY();
+        if(rect.centerX()<=0){
+            x=400;
+        }
+        if(rect.centerY()<=0){
+            y=2000;
+        }
+        try {
+            forceClick(x,y);
+            Thread.sleep(200);
+            forceClick(x,y);
+            Thread.sleep(1000);
+            backToZanAc();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void backToZanAc() {
+        forceBack();
+        try {
+            Thread.sleep(1500);
+            if(nowIndex<=0){
+                nowHfType=HF_PAGE_OVER;
+                isLikeBackDoing=false;
+                LogUtils.i("需要上滑列表重新找人了");
+            }else{
+                nowHfType=HF_FINDHEAD;
+                isLikeBackDoing=false;
+                LogUtils.i("继续下一个人的回访");
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
@@ -662,6 +872,22 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
         });
     }
 
+    private void showDialog(final String msg) {
+        Handler handlerThree=new Handler(Looper.getMainLooper());
+        handlerThree.post(new Runnable(){
+            public void run(){
+                CommonMsgDialog msgDialog=new CommonMsgDialog(getApplicationContext());
+                msgDialog.getHolder().tvTitle.setText("系统提示");
+                msgDialog.getHolder().tvSure.setText("确定");
+                msgDialog.getHolder().tvMiddle.setVisibility(View.GONE);
+                msgDialog.getHolder().tvCancle.setVisibility(View.GONE);
+                msgDialog.getHolder().tvContent.setText(msg);
+                msgDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+                msgDialog.show();
+            }
+        });
+    }
+
     private void startTimer() {
         if(nowState==COUNTING){
             return;
@@ -730,6 +956,25 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
 
 
 
+
+    private void switchNextOneTop() {
+        //上滑列表，状态改为查找头像进行回访
+        if(isSwiping){
+            return;
+        }
+        isSwiping=true;
+        String move = "input swipe 560 500 560 1600";
+        LogUtils.v("上滑");
+        doCmd(move);
+        try {
+            Thread.sleep(2000);
+            isSwiping=false;
+            nowIndex=0;
+            nowHfType=HF_FINDHEAD;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 
 
 
