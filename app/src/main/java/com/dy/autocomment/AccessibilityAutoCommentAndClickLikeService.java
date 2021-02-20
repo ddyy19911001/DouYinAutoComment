@@ -626,7 +626,7 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
             setNodeText(nodeEditTextParent.get(0).getChild(0),getLiveCommentText());
             //点击发送按钮
             Thread.sleep(1000);
-            forceClick(1000,1440);
+            forceClick(1000,1340);
             Thread.sleep(1000);
             forceClick(500, 500);
             Thread.sleep(1000);
