@@ -97,9 +97,9 @@
         <Switch
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="直播间评论吸粉"
+            android:text="自动刷视频点赞"
             android:switchPadding="10dp"
-            android:checked="true"
+            android:checked="false"
             android:id="@+id/s_is_open_yh"
             />
     </LinearLayout>

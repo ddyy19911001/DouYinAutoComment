@@ -71,7 +71,7 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     private String redBagRootId="com.ss.android.ugc.aweme:id/fw0";//装福袋和红包的父容器
     private boolean isSwiping=false;
     public static int commentCount=0;
-    public static boolean isOpenYh=false;//是否开启养号功能
+    public static boolean isOpenYh=true;//是否开启养号功能
     private boolean isClickingLike=false;
     public static int viewedVideoCount=0;//已观看的视频总数
     private String headOfRedBagSenderId="com.ss.android.ugc.aweme:id/blr";//中间大圆形倒计时的id
