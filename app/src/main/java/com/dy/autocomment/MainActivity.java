@@ -224,7 +224,7 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
         switchIsSingleLivingRoom.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                AccessibilityAutoCommentAndClickLikeService.isSingleLivingRoomComment=switchIsSingleLivingRoom.isChecked();
+                AccessibilityAutoCommentAndClickLikeService.isSingleLivingRoomComment=!switchIsSingleLivingRoom.isChecked();
                 if(switchIsSingleLivingRoom.isChecked()){
                     switchIsSingleLivingRoom.setText("多直播间吸粉");
                 }else{
@@ -235,7 +235,7 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
         switchIsOpenYh.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                AccessibilityAutoCommentAndClickLikeService.isOpenYh=switchIsOpenYh.isChecked();
+                AccessibilityAutoCommentAndClickLikeService.isOpenYh=!switchIsOpenYh.isChecked();
                 if(switchIsOpenYh.isChecked()){
                     switchIsOpenYh.setText("直播间评论吸粉");
                 }else{
