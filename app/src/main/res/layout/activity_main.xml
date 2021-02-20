@@ -88,16 +88,16 @@
         <Switch
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="开启监听"
+            android:text="任务开启"
             android:switchPadding="10dp"
-            android:checked="false"
+            android:checked="true"
             android:id="@+id/s_is_open"
             android:layout_marginRight="30dp"
             />
         <Switch
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="养号点赞/直播吸粉"
+            android:text="直播间评论吸粉"
             android:switchPadding="10dp"
             android:checked="true"
             android:id="@+id/s_is_open_yh"
@@ -113,7 +113,7 @@
         <Switch
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="加随机字符"
+            android:text="防频繁发言"
             android:switchPadding="10dp"
             android:checked="true"
             android:layout_marginRight="30dp"
@@ -122,7 +122,7 @@
         <Switch
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="定时关闭(03:00)"
+            android:text="凌晨3点自动关闭"
             android:switchPadding="10dp"
             android:checked="true"
             android:id="@+id/s_is_auto_close"
@@ -139,16 +139,16 @@
         <Switch
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="单间吸粉/轮换吸粉"
+            android:text="单直播间吸粉"
             android:switchPadding="10dp"
-            android:checked="true"
+            android:checked="false"
             android:layout_marginRight="30dp"
             android:id="@+id/s_is_single_living_room"
             />
         <Switch
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="直播间点赞"
+            android:text="直播开始点赞"
             android:switchPadding="10dp"
             android:checked="true"
             android:id="@+id/s_is_auto_click_like"
@@ -165,7 +165,7 @@
         android:layout_marginRight="20dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="直播间无限点赞"
+        android:text="直播不循环点赞"
         android:visibility="visible"
         android:switchPadding="10dp"
         android:checked="false"
@@ -174,7 +174,7 @@
     <Switch
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="赞回访模式"
+        android:text="关闭赞回访"
         android:visibility="visible"
         android:switchPadding="10dp"
         android:checked="false"

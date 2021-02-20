@@ -181,48 +181,88 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 AccessibilityAutoCommentAndClickLikeService.isSwitchOpen=switchIsOpen.isChecked();
+                if(switchIsOpen.isChecked()){
+                    switchIsOpen.setText("任务开启");
+                }else{
+                    switchIsOpen.setText("任务关闭");
+                }
             }
         });
         switchIsOpenLikeForever.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 AccessibilityAutoCommentAndClickLikeService.isOpenClickLikeForever=switchIsOpenLikeForever.isChecked();
+                if(switchIsOpenLikeForever.isChecked()){
+                    switchIsOpenLikeForever.setText("直播间循环点赞");
+                }else{
+                    switchIsOpenLikeForever.setText("直播不循环点赞");
+                }
             }
         });
         switchIsAutoClickLike.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 AccessibilityAutoCommentAndClickLikeService.isAutoClickLike=switchIsAutoClickLike.isChecked();
+                if(switchIsAutoClickLike.isChecked()){
+                    switchIsAutoClickLike.setText("直播开始点赞");
+                }else{
+                    switchIsAutoClickLike.setText("直播开始不点赞");
+                }
             }
         });
         switchIsOpenLikeBack.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 AccessibilityAutoCommentAndClickLikeService.isOpenBackLikeMode=switchIsOpenLikeBack.isChecked();
+                if(switchIsOpenLikeBack.isChecked()){
+                    switchIsOpenLikeBack.setText("赞回访模式");
+                }else{
+                    switchIsOpenLikeBack.setText("关闭赞回访");
+                }
             }
         });
         switchIsSingleLivingRoom.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 AccessibilityAutoCommentAndClickLikeService.isSingleLivingRoomComment=switchIsSingleLivingRoom.isChecked();
+                if(switchIsSingleLivingRoom.isChecked()){
+                    switchIsSingleLivingRoom.setText("多直播间吸粉");
+                }else{
+                    switchIsSingleLivingRoom.setText("单直播间吸粉");
+                }
             }
         });
         switchIsOpenYh.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 AccessibilityAutoCommentAndClickLikeService.isOpenYh=switchIsOpenYh.isChecked();
+                if(switchIsOpenYh.isChecked()){
+                    switchIsOpenYh.setText("直播间评论吸粉");
+                }else{
+                    switchIsOpenYh.setText("自动刷视频点赞");
+                }
             }
         });
         switchIsAutoClose.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 AccessibilityAutoCommentAndClickLikeService.needAutoClose=switchIsAutoClose.isChecked();
+                if(switchIsAutoClose.isChecked()){
+                    switchIsAutoClose.setText("凌晨3点自动关闭");
+                }else{
+                    switchIsAutoClose.setText("无限执行任务");
+                }
             }
         });
         switchIsAddRandom.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 AccessibilityAutoCommentAndClickLikeService.needRandWords=switchIsAddRandom.isChecked();
+                if(switchIsAddRandom.isChecked()){
+                    switchIsAddRandom.setText("防频繁发言");
+                }else{
+                    switchIsAddRandom.setText("不加后缀");
+                }
             }
         });
         btStart.setOnClickListener(new NoDoubleClickListener() {
