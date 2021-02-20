@@ -176,15 +176,17 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                 List<AccessibilityNodeInfo> topicNode = findNodesById(livingTopicId);
                 if(isOk(topicNode)&&topicNode.get(0)!=null){
                     String topicStr= (String) topicNode.get(0).getText();
-                    if(topicStr!=null&&(topicStr.contains("涨")||
+                    if(topicStr!=null&&(topicStr.contains("涨涨")||
                             topicStr.contains("人气")||
                             topicStr.contains("粉"))||
                             topicStr.contains("抱团")||
                             topicStr.contains("互")||
                             topicStr.contains("交友")||
                             topicStr.contains("友")||
-                            topicStr.contains("朋友")||
-                            topicStr.contains("热门")){
+                            topicStr.contains("涨了")||
+                            topicStr.contains("涨粉")||
+                            topicStr.contains("涨涨涨")||
+                            topicStr.contains("朋友")){
                         isTopicOk=true;
                     }
                 }
