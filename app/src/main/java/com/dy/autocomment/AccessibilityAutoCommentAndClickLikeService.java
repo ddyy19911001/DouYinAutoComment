@@ -103,8 +103,8 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     private int sendLivingCommentCount=0;//单个直播间发送的总评论数
     public static  boolean needRandWords=true;//是否需要随机字符串
     public static  boolean needAutoClose=true;//是否需要自动关闭所有程序
-    private double livingPeopleCount=100;//单直播间发言时，人数最低要求
-    private double NotSingleModelivingPeopleCount=60;//轮流直播间发言时直播间最低人数要求
+    private double livingPeopleCount=20;//单直播间发言时，人数最低要求
+    private double NotSingleModelivingPeopleCount=20;//轮流直播间发言时直播间最低人数要求
     public static boolean isOpenClickLikeForever=false;//无限点赞
     public static boolean isOpenBackLikeMode=false;//是否开启赞回访模式
     /*****************************************************************************/
@@ -224,6 +224,7 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                     }
                 }else{
                     LogUtils.i("未找到话题节点");
+                    isTopicOk = true;
                 }
                 isUsefulLivingRoom=isTopicOk&&isCountOk;
                 LogUtils.i("是否满足要求："+isUsefulLivingRoom+",话题："+isTopicOk+",人数："+isCountOk);
@@ -239,7 +240,7 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                         LogUtils.i("时间差：" + betweenTime + ",预设时间差：" + sendLivingCommentDelay);
                         doLivingTask();
                     }else{
-
+                        showTs("该直播间不符合"+(isTopicOk?(isCountOk?"人数":"人数和话题"):"话题")+"要求");
                     }
 //                    else{
 //                        showTs("在线人数或话题未满足，换房间");
