@@ -67,7 +67,6 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
     private Switch switchIsAutoClose;
     private Switch switchIsSingleLivingRoom;
     private Switch switchIsAutoClickLike;
-    private boolean CanShowFloat=false;
     private Intent intent;
     private MyNotifyService.MyWorkService workService;
     private Switch switchIsOpenLikeForever;
@@ -115,6 +114,16 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
         tvResults.setText("上次点赞视频："+nowCount+"条  上次发送评论："+nowCommentCount+"条"+"\n上次共观看视频："+viewedVideoCount+"个");
     }
 
+    @Override
+    public void onRestart() {
+        super.onRestart();
+        if(AccessibilityAutoCommentAndClickLikeService.isSwitchOpen){
+            switchIsOpen.setChecked(true);
+        }else{
+            switchIsOpen.setChecked(false);
+
+        }
+    }
 
     //判断自定义辅助功能服务是否开启
     public static boolean isAccessibilitySettingsOn(Context context, String className) {
@@ -179,7 +188,7 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        AccessibilityAutoCommentAndClickLikeService.isSwitchOpen=switchIsOpen.isChecked();
+        initStatus();
         switchIsOpen.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -272,6 +281,7 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
             @Override
             protected void onNoDoubleClick(View v) {
                 boolean isYhBeTimeEmpty=MyUtils.isEmpty(etYhBeTime);
+                initStatus();
                 if(!isYhBeTimeEmpty){
                     AccessibilityAutoCommentAndClickLikeService.yhWaitTimeEveryVideo=Integer.parseInt(etYhBeTime.getText().toString().trim());
                 }
@@ -305,6 +315,15 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
         TsUtils.showTips("准备开始任务");
     }
 
+    private void initStatus() {
+        AccessibilityAutoCommentAndClickLikeService.isSwitchOpen=switchIsOpen.isChecked();
+        AccessibilityAutoCommentAndClickLikeService.isOpenClickLikeForever=switchIsOpenLikeForever.isChecked();
+        AccessibilityAutoCommentAndClickLikeService.isAutoClickLike=switchIsAutoClickLike.isChecked();
+        AccessibilityAutoCommentAndClickLikeService.isOpenYh=!switchIsOpenYh.isChecked();
+        AccessibilityAutoCommentAndClickLikeService.needAutoClose=switchIsAutoClose.isChecked();
+        AccessibilityAutoCommentAndClickLikeService.needRandWords=switchIsAddRandom.isChecked();
+    }
+
     @Override
     public void onDestroy() {
         unbindService(this);
@@ -325,8 +344,8 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
             }
             else
             {
-               CanShowFloat = true;
-                openFloatView();
+//                openFloatView();
+                launchDouYin();
             }
         }
     }
@@ -343,10 +362,8 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
             if(resultCode == RESULT_OK)
             {
                 LogUtils.i("悬浮窗的权限ok了");
-               CanShowFloat = true;		// 设置标识为可显示悬浮窗
                 openFloatView();
             }
-            else CanShowFloat = false;
         }
     }
 

@@ -10,6 +10,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
@@ -39,10 +40,7 @@ import yin.deng.normalutils.utils.MyUtils;
  * 适配版本 14.8.0 适配机型 小米9
  */
 public class AccessibilityAutoCommentAndClickLikeService extends AccessibilityService {
-    public static int yhWaitTimeEveryVideo=3;//养号页面停留时间
     public static int lickCount=0;//当前总共点赞数量
-    public static int lickPercent=70;//点赞概率
-    public static int commentPercent=40;//评论概率
     public static final int DOING_TASK=-1;//准备开始
     public static final int NORMAL=0;//准备开始
     public static final int COUNTING=1;//开始计时
@@ -95,11 +93,13 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     private long lastClickLivingLikeTime=0;//上次直播点赞时间
     private long LivingLikeClickBetweenTime=60*1000;//一分钟给主播点赞一次
     private long lastclickBottomLinearTime =0;//上次点击左上角红包按钮的时间
-    private long lastClickBack=0;
-    private boolean isOpeningCommentBottomLinear=false;
-    public static int maxClickLikeSize=80;//最多可以点赞50个视频
+    /*************************基础配置*******************************************/
     private boolean isKillSelfDoing=false;
-    public static long sendLivingCommentDelay=9000;//每隔9秒发一条评论
+    public static int yhWaitTimeEveryVideo=6;//养号页面停留时间
+    public static int maxClickLikeSize=80;//最多可以点赞80个视频
+    public static int lickPercent=70;//点赞概率
+    public static int commentPercent=50;//评论概率
+    public static long sendLivingCommentDelay=7000;//每隔7秒发一条评论
     private int sendLivingCommentCount=0;//单个直播间发送的总评论数
     public static  boolean needRandWords=true;//是否需要随机字符串
     public static  boolean needAutoClose=true;//是否需要自动关闭所有程序
@@ -107,6 +107,7 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     private double NotSingleModelivingPeopleCount=60;//轮流直播间发言时直播间最低人数要求
     public static boolean isOpenClickLikeForever=false;//无限点赞
     public static boolean isOpenBackLikeMode=false;//是否开启赞回访模式
+    /*****************************************************************************/
     private int nowIndex=0;//当前正则操作的回赞角标
     private boolean isLikeBackDoing=false;//是否正在做赞回访操作
     private boolean isReFind=false;
@@ -121,6 +122,24 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
 
     }
 
+
+    long lastDoTime=0;
+    @Override
+    protected boolean onKeyEvent(KeyEvent event) {
+        if(event.getKeyCode()==KeyEvent.KEYCODE_VOLUME_DOWN){
+            if(System.currentTimeMillis()-lastDoTime>1000) {
+                lastDoTime=System.currentTimeMillis();
+                if (isSwitchOpen) {
+                    isSwitchOpen = false;
+                    showTs("暂停任务");
+                } else {
+                    isSwitchOpen = true;
+                    showTs("开始任务");
+                }
+            }
+        }
+        return super.onKeyEvent(event);
+    }
 
     SimpleDateFormat format=new SimpleDateFormat("HH");
 
@@ -577,7 +596,7 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                 for(int i=0;i<30;i++){
                     try {
                         forceClick(500, 500);
-                        Thread.sleep(60);
+                        Thread.sleep(150);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -606,7 +625,7 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                 while (isOpenClickLikeForever){
                     try {
                         forceClick(500, 500);
-                        Thread.sleep(120);
+                        Thread.sleep(150);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -628,6 +647,9 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
         if(isLivingTaskDoing){
             return;
         }
+        if(!isSwitchOpen){
+            return;
+        }
         isLivingTaskDoing=true;
         //点击底部框
         try {
@@ -641,7 +663,12 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
 
     }
 
+
+
     public void findEditextAndSendMsg() throws InterruptedException {
+        if(!isSwitchOpen){
+            return;
+        }
 //        List<AccessibilityNodeInfo> nodeEditTextParent = findNodesById(editTextParenetId);
         AccessibilityNodeInfo nodeEditTextParent = findFocus(AccessibilityNodeInfo.ACTION_FOCUS);
         if(nodeEditTextParent!=null){
@@ -707,7 +734,6 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                 isClickingLeftTop=true;
                 LogUtils.i("开始点击左上角按钮");
                 forceClick(80,350);
-                lastClickBack=System.currentTimeMillis();
                 lastclickBottomLinearTime =System.currentTimeMillis();
                 new Handler().postDelayed(new Runnable() {
                     @Override

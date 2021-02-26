@@ -23,7 +23,7 @@
     <EditText
         android:layout_marginTop="10dp"
         android:id="@+id/et_live_between_time"
-        android:hint="直播间评论间隔（s）默：6s"
+        android:hint="直播间评论间隔（s）默：7s"
         android:textSize="14sp"
         android:gravity="center"
         android:layout_width="match_parent"
@@ -47,7 +47,7 @@
     <EditText
         android:layout_marginTop="10dp"
         android:id="@+id/et_yh_between_time"
-        android:hint="养号停留时间（s）默：3s"
+        android:hint="养号停留时间（s）默：6s"
         android:textSize="14sp"
         android:gravity="center"
         android:layout_width="match_parent"
@@ -70,7 +70,7 @@
     <EditText
         android:layout_marginTop="10dp"
         android:id="@+id/et_comment_point"
-        android:hint="养号评论概率（%）默：40%"
+        android:hint="养号评论概率（%）默：50%"
         android:textSize="14sp"
         android:gravity="center"
         android:layout_width="match_parent"
@@ -81,7 +81,7 @@
     <EditText
         android:layout_marginTop="10dp"
         android:id="@+id/et_max_like_size"
-        android:hint="最多点赞数（个）默：50个"
+        android:hint="最多点赞数（个）默：80个"
         android:textSize="14sp"
         android:gravity="center"
         android:layout_width="match_parent"
@@ -102,7 +102,7 @@
             android:layout_height="wrap_content"
             android:text="任务开启"
             android:switchPadding="10dp"
-            android:checked="true"
+            android:checked="false"
             android:id="@+id/s_is_open"
             android:layout_marginRight="30dp"
             />
