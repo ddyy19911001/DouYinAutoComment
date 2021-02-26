@@ -34,6 +34,18 @@
 
     <EditText
         android:layout_marginTop="10dp"
+        android:id="@+id/et_live_topic_contains"
+        android:hint="直播间评论过滤话题（默认通用）"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:inputType="number"
+        android:maxLength="3"
+        />
+
+    <EditText
+        android:layout_marginTop="10dp"
         android:id="@+id/et_yh_between_time"
         android:hint="养号停留时间（s）默：3s"
         android:textSize="14sp"
@@ -137,6 +149,7 @@
         android:layout_marginTop="15dp"
         >
         <Switch
+            android:visibility="gone"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="单直播间吸粉"
@@ -153,6 +166,16 @@
             android:checked="true"
             android:id="@+id/s_is_auto_click_like"
             />
+        <Switch
+            android:layout_marginLeft="20dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="直播不循环点赞"
+            android:visibility="visible"
+            android:switchPadding="10dp"
+            android:checked="false"
+            android:id="@+id/s_is_open_zb_like_forever"
+            />
     </LinearLayout>
     <LinearLayout
         android:gravity="center"
@@ -161,21 +184,12 @@
         android:orientation="horizontal"
         android:layout_marginTop="15dp"
         >
-    <Switch
-        android:layout_marginRight="20dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="直播不循环点赞"
-        android:visibility="visible"
-        android:switchPadding="10dp"
-        android:checked="false"
-        android:id="@+id/s_is_open_zb_like_forever"
-        />
+
     <Switch
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="关闭赞回访"
-        android:visibility="visible"
+        android:visibility="gone"
         android:switchPadding="10dp"
         android:checked="false"
         android:id="@+id/s_is_open_like_back"

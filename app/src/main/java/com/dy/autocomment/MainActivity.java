@@ -26,6 +26,7 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.dy.autocomment.view.TsUtils;
 import com.dy.fastframework.activity.BaseActivity;
 import com.dy.fastframework.service.NotifyService;
 import com.dy.fastframework.view.CommonMsgDialog;
@@ -71,6 +72,7 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
     private MyNotifyService.MyWorkService workService;
     private Switch switchIsOpenLikeForever;
     private Switch switchIsOpenLikeBack;
+    private EditText etLiveTopicContains;
 
     @Override
     public int setLayout() {
@@ -104,7 +106,7 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
             });
             msgDialog.show();
         } else {
-            showTs( "服务已开启");
+            TsUtils.showTips( "无障碍服务已开启，准备就绪");
             //do other things...
         }
         int viewedVideoCount=BaseApp.getSharedPreferenceUtil().getInt("viewedVideoCount");
@@ -162,6 +164,7 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
         etMaxLikeSize =findViewById(R.id.et_max_like_size);
         etCommentPoint =findViewById(R.id.et_comment_point);
         etLiveBetweenTime =findViewById(R.id.et_live_between_time);
+        etLiveTopicContains =findViewById(R.id.et_live_topic_contains);
         switchIsOpenLikeBack =findViewById(R.id.s_is_open_like_back);
     }
 
@@ -288,12 +291,18 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
                         AccessibilityAutoCommentAndClickLikeService.maxClickLikeSize=50;
                     }
                 }
+                if(MyUtils.isEmpty(etLiveTopicContains)){
+                    AccessibilityAutoCommentAndClickLikeService.needTopic="";
+                }else{
+                    AccessibilityAutoCommentAndClickLikeService.needTopic=etLiveTopicContains.getText().toString().trim();
+                }
                 BaseApp.getSharedPreferenceUtil().saveInt("count",0);
                 BaseApp.getSharedPreferenceUtil().saveInt("commentCount",0);
                 BaseApp.getSharedPreferenceUtil().saveInt("viewedVideoCount",0);
                 RequestOverlayPermission();
             }
         });
+        TsUtils.showTips("准备开始任务");
     }
 
     @Override
@@ -367,10 +376,10 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
                             if(position==0) {
                                 if(AccessibilityAutoCommentAndClickLikeService.isSwitchOpen){
                                     switchIsOpen.setChecked(false);
-                                    showTs("已停止所有任务");
+                                    TsUtils.showTips("已停止所有任务");
                                 }else{
                                     switchIsOpen.setChecked(true);
-                                    showTs("任务开始");
+                                    TsUtils.showTips("任务开始");
                                 }
                                 AccessibilityAutoCommentAndClickLikeService.isSwitchOpen=switchIsOpen.isChecked();
                                 itemList.get(0).setTitle("状态:" + (AccessibilityAutoCommentAndClickLikeService.isSwitchOpen ? "开" : "关"));
@@ -384,7 +393,7 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
                                     String nowStr=AccessibilityAutoCommentAndClickLikeService.isOpenYh?nowYhStr:nowXfStr;
                                     LogUtils.i(nowYhStr);
                                     itemList.get(1).setTitle(nowStr);
-                                    showTs("已切换到吸粉模式");
+                                    TsUtils.showTips("已切换到吸粉模式");
                                     mFloatMenu.openMenu();
                                 }else{
                                     AccessibilityAutoCommentAndClickLikeService.isOpenYh = true;
@@ -394,16 +403,16 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
                                     String nowStr=AccessibilityAutoCommentAndClickLikeService.isOpenYh?nowYhStr:nowXfStr;
                                     LogUtils.i(nowYhStr);
                                     itemList.get(1).setTitle(nowStr);
-                                    showTs("已切换到养号模式");
+                                    TsUtils.showTips("已切换到养号模式");
                                     mFloatMenu.openMenu();
                                 }
                             } else if (position == 2) {
                                 if(AccessibilityAutoCommentAndClickLikeService.isOpenBackLikeMode){
                                     switchIsOpenLikeBack.setChecked(false);
-                                    showTs("赞回访已关闭");
+                                    TsUtils.showTips("赞回访已关闭");
                                 }else{
                                     switchIsOpenLikeBack.setChecked(true);
-                                    showTs("赞回访已开启");
+                                    TsUtils.showTips("赞回访已开启");
                                 }
                                 AccessibilityAutoCommentAndClickLikeService.isOpenBackLikeMode=switchIsOpenLikeBack.isChecked();
                                 itemList.get(2).setTitle("回访:" + (AccessibilityAutoCommentAndClickLikeService.isOpenBackLikeMode ? "关" : "开"));
@@ -411,10 +420,10 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
                             }else if(position==3) {
                                 if(AccessibilityAutoCommentAndClickLikeService.isSingleLivingRoomComment){
                                     switchIsSingleLivingRoom.setChecked(false);
-                                    showTs("当前模式：多直播间循环评论");
+                                    TsUtils.showTips("当前模式：多直播间循环评论");
                                 }else{
                                     switchIsSingleLivingRoom.setChecked(true);
-                                    showTs("当前模式：单直播间轮流评论");
+                                    TsUtils.showTips("当前模式：单直播间轮流评论");
                                 }
                                 AccessibilityAutoCommentAndClickLikeService.isSingleLivingRoomComment=switchIsSingleLivingRoom.isChecked();
                                 itemList.get(3).setTitle("轮换:" + (AccessibilityAutoCommentAndClickLikeService.isSingleLivingRoomComment ? "关" : "开"));
@@ -422,10 +431,10 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
                             }else if(position==4) {
                                 if(AccessibilityAutoCommentAndClickLikeService.isOpenClickLikeForever){
                                     switchIsOpenLikeForever.setChecked(false);
-                                    showTs("已关闭直播间无限点赞");
+                                    TsUtils.showTips("已关闭直播间无限点赞");
                                 }else{
                                     switchIsOpenLikeForever.setChecked(true);
-                                    showTs("已开启直播间无限点赞");
+                                    TsUtils.showTips("已开启直播间无限点赞");
                                 }
                                 AccessibilityAutoCommentAndClickLikeService.isOpenClickLikeForever=switchIsOpenLikeForever.isChecked();
                                 itemList.get(4).setTitle("人气:" + (AccessibilityAutoCommentAndClickLikeService.isOpenClickLikeForever ? "开" : "关"));
@@ -479,14 +488,14 @@ public class MainActivity extends BaseActivity implements ServiceConnection {
             startActivity(it);
         }catch (Exception e){
             e.printStackTrace();
-            showTs("启动失败，请确认您安装了抖音");
+            TsUtils.showTips("启动失败，请确认您安装了抖音");
         }
     }
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
         LogUtils.i("服务已开启");
-        showTs("后台服务已开启");
+        TsUtils.showTips("后台服务已开启");
         workService = ((MyNotifyService.MyWorkService) service);
     }
 

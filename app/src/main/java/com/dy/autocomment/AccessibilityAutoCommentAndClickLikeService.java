@@ -1,6 +1,8 @@
 package com.dy.autocomment;
 
 import android.accessibilityservice.AccessibilityService;
+import android.accessibilityservice.GestureDescription;
+import android.graphics.Path;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
@@ -12,8 +14,11 @@ import android.view.View;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.dy.autocomment.view.FloatTips;
+import com.dy.autocomment.view.TsUtils;
 import com.dy.fastframework.view.CommonMsgDialog;
 import com.vise.utils.assist.RandomUtil;
 
@@ -22,6 +27,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Delayed;
 
 import yin.deng.normalutils.utils.DownTimer;
 import yin.deng.normalutils.utils.LogUtils;
@@ -37,7 +43,7 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     public static int lickCount=0;//当前总共点赞数量
     public static int lickPercent=70;//点赞概率
     public static int commentPercent=40;//评论概率
-    public static final int WATING=-1;//准备开始
+    public static final int DOING_TASK=-1;//准备开始
     public static final int NORMAL=0;//准备开始
     public static final int COUNTING=1;//开始计时
     public static final int COUNT_OVER=2;//结束计时
@@ -55,15 +61,23 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     public static boolean isAutoClickLike=true;//是否开启直播间自动点赞模式
     public static boolean isSingleLivingRoomComment=true;//是否只在同一直播间进行评论
     private DownTimer timer;
-    public String enterMainAcTag="com.ss.android.ugc.aweme:id/dwq";//视频发布的左下角昵称id
-    public String clickEnterInLivingRoom="com.ss.android.ugc.aweme:id/dbc";//直播视频的底部LinearLayoutId
     public String adName="广告";
-    private String commentIsOpenStr="com.ss.android.ugc.aweme:id/dfz";//评论弹框列表条目id
-    private String commentEditTextStr="com.ss.android.ugc.aweme:id/ady";//软键盘弹起后的评论输入框id
-    private String sendBtStr="com.ss.android.ugc.aweme:id/aeg";//发送按钮的id
-    private String livingRoomTopRightPeopleLinearId="com.ss.android.ugc.aweme:id/e6q";//直播间右上角的观众人数框
-    private String livingTopicId="com.ss.android.ugc.aweme:id/bsw";//直播间话题id
-    private String editTextParenetId="com.ss.android.ugc.aweme:id/b4f";//输入框父容器id
+    /**************版本更新只需修改此部分的6个id即可***********************/
+    //视频发布的左下角音乐封面id
+    public String enterMainAcTag="com.ss.android.ugc.aweme:id/fne";
+    //视频浏览时遇到的直播的底部中间的大的LinearLayoutId：包含点击进入直播间文字在内的父容器
+    public String clickEnterInLivingRoom="com.ss.android.ugc.aweme:id/eyv";
+    //软键盘弹起后的评论输入框id
+    private String commentEditTextStr="com.ss.android.ugc.aweme:id/b4m";
+    //评论发送按钮的id
+    private String sendBtStr="com.ss.android.ugc.aweme:id/b5c";
+    /********************直播间循环发言****************/
+    //直播间右上角的观众人数TextView
+    private String livingRoomTopRightPeopleLinearId="com.ss.android.ugc.aweme:id/g3k";
+    //直播间话题TextViewId
+    private String livingTopicId="com.ss.android.ugc.aweme:id/d13";
+
+    /***************下方为赞回访id，暂不需要***********************/
     private String mainZanAcId="com.ss.android.ugc.aweme:id/dr8";//判断是否在赞页面标题id
     private String itemNeedZanId="com.ss.android.ugc.aweme:id/e43";//需要点赞的人物昵称id
     private String dyId="com.ss.android.ugc.aweme:id/g42";//是否在个人资料页动态按钮父布局LinearLayout的ID
@@ -98,6 +112,7 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     private boolean isReFind=false;
     private String lastHeadName;//最底部的名字
     private int backCount;//赞回访人数
+    public static String needTopic;
 
     /**
      * 重置当前所有标记类数据
@@ -174,23 +189,25 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                 }
                 boolean isTopicOk=false;//话题是否达标
                 List<AccessibilityNodeInfo> topicNode = findNodesById(livingTopicId);
-                if(isOk(topicNode)&&topicNode.get(0)!=null){
+                if(isOk(topicNode)){
                     String topicStr= (String) topicNode.get(0).getText();
-                    if(topicStr!=null&&(topicStr.contains("涨涨")||
-                            topicStr.contains("人气")||
-                            topicStr.contains("粉"))||
-                            topicStr.contains("抱团")||
-                            topicStr.contains("互")||
-                            topicStr.contains("交友")||
-                            topicStr.contains("友")||
-                            topicStr.contains("涨了")||
-                            topicStr.contains("涨粉")||
-                            topicStr.contains("涨涨涨")||
-                            topicStr.contains("朋友")){
-                        isTopicOk=true;
+                    LogUtils.i("直播话题："+topicStr);
+                    if(topicStr!=null){
+                        if(!MyUtils.isEmpty(needTopic)){
+                            if(topicStr.contains(needTopic)){
+                                isTopicOk=true;
+                            }else{
+                                isCountOk=false;
+                            }
+                        }else {
+                            isTopicOk = true;
+                        }
                     }
+                }else{
+                    LogUtils.i("未找到话题节点");
                 }
                 isUsefulLivingRoom=isTopicOk&&isCountOk;
+                LogUtils.i("是否满足要求："+isUsefulLivingRoom+",话题："+isTopicOk+",人数："+isCountOk);
                 //如果是直播间，执行直播的对应任务
                 if(isAutoClickLike&&isUsefulLivingRoom&&System.currentTimeMillis()-lastClickLivingLikeTime>=LivingLikeClickBetweenTime){
                     doClickLikeInLivingRoom();
@@ -203,23 +220,28 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                         LogUtils.i("时间差：" + betweenTime + ",预设时间差：" + sendLivingCommentDelay);
                         doLivingTask();
                     }else{
-                        showTs("在线人数或话题未满足，换房间");
-                        isSwiping = true;
-                        openNextOne();
-                        new Handler().postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                isSwiping = false;
-                                nowState = NORMAL;
-                            }
-                        }, 3000);
+
                     }
+//                    else{
+//                        showTs("在线人数或话题未满足，换房间");
+//                        isSwiping = true;
+//                        openNextOne();
+//                        new Handler().postDelayed(new Runnable() {
+//                            @Override
+//                            public void run() {
+//                                isSwiping = false;
+//                                nowState = NORMAL;
+//                            }
+//                        }, 3000);
+//                    }
                 }
             }
             return;
         }
         //开始干活
         switch (nowState) {
+            case DOING_TASK:
+                break;
             case NORMAL:
                 if (isSwiping) {
                     return;
@@ -620,10 +642,13 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     }
 
     public void findEditextAndSendMsg() throws InterruptedException {
-        List<AccessibilityNodeInfo> nodeEditTextParent = findNodesById(editTextParenetId);
-        if(isOk(nodeEditTextParent)){
+//        List<AccessibilityNodeInfo> nodeEditTextParent = findNodesById(editTextParenetId);
+        AccessibilityNodeInfo nodeEditTextParent = findFocus(AccessibilityNodeInfo.ACTION_FOCUS);
+        if(nodeEditTextParent!=null){
+            LogUtils.i("找到输入框了");
             //输入框已经出现
-            setNodeText(nodeEditTextParent.get(0).getChild(0),getLiveCommentText());
+//            setNodeText(nodeEditTextParent.get(0).getChild(0),getLiveCommentText());
+            setNodeText(nodeEditTextParent,getLiveCommentText());
             //点击发送按钮
             Thread.sleep(1000);
             forceClick(1000,1340);
@@ -649,6 +674,7 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                 showTs("已发送评论" + sendLivingCommentCount + "条");
             }
         }else{
+            LogUtils.i("没找到输入框");
             //输入框未出现,重新点击底部
             isLivingTaskDoing=false;
             findEditextAndSendMsg();
@@ -711,73 +737,114 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     }
 
 
-    long lastDoTime=0;
-    boolean isInputOver=false;
     private void commentText() {
-        if(System.currentTimeMillis()-lastDoTime<500){
+        if(nowState==DOING_TASK){
             return;
         }
-        if(isInputOver){
-            return;
-        }
-        lastDoTime=System.currentTimeMillis();
-        List<AccessibilityNodeInfo> node = findNodesById(commentIsOpenStr);
-        List<AccessibilityNodeInfo> nodeEditext = findNodesById(commentEditTextStr);
-        if(!isOk(node)) {
-            if(!isOk(nodeEditext)){
-                LogUtils.d("点击坐标打开评论框");
-                //什么都没有点的情况
-                forceClick(1000,1605);//打开评论面板
-            }else{
-                //已经弹起输入框的情况
-                LogUtils.d("输入评论内容");
-                setNodeText(nodeEditext.get(0), getCommentText());
-                List<AccessibilityNodeInfo> sendBt = findNodesById(sendBtStr);
-                if(isOk(sendBt)){
-                    sendBt.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                    commentCount++;
-                    BaseApp.getSharedPreferenceUtil().saveInt("commentCount", commentCount);
-                    new Handler().postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            forceBack();
-                            new Handler().postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-                                    LogUtils.d("评论结束了，当前类型："+nowState);
-                                    openNextOne();
-                                    LogUtils.d("关闭评论对话框");
-                                    nowState = NORMAL;
-                                    isInputOver=false;
-                                }
-                            }, 1500);
-                        }
-                    }, 1500);
-                    LogUtils.d("发送评论");
-                    isInputOver=true;
-                }else{
-                    LogUtils.v("没有找到发送按钮");
-                    isInputOver=false;
-                }
-
+        nowState=DOING_TASK;
+        forceClick(1000,1605);//打开评论面板
+        showTs("打开评论面板");
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                forceClick(360,2270);//打开评论面板
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        List<AccessibilityNodeInfo> nodeEditext = findNodesById(commentEditTextStr);
+                        setNodeText(nodeEditext.get(0), getCommentText());
+                        showTs("输入评论内容");
+                        final List<AccessibilityNodeInfo> sendBt = findNodesById(sendBtStr);
+                        sendBt.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                        commentCount++;
+                        showTs("发送评论成功");
+                        new Handler().postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                forceBack();
+                                showTs("关闭评论对话框,滑动到下一个");
+                                BaseApp.getSharedPreferenceUtil().saveInt("commentCount", commentCount);
+                                LogUtils.d("评论结束了，当前类型："+nowState);
+                                new Handler().postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                                            openNextOne(new GestureResultCallback() {
+                                                @Override
+                                                public void onCompleted(GestureDescription gestureDescription) {
+                                                    super.onCompleted(gestureDescription);
+                                                    showTs("滑动完成");
+                                                    LogUtils.i("滑动结束");
+                                                    nowState = NORMAL;
+                                                }
+                                            });
+                                        }
+                                    }
+                                }, 1000);
+                            }
+                        }, 500);
+                    }
+                }, 1000);
             }
-        }else{
-            LogUtils.v("评论面板已经打开");
-            if(isOpeningCommentBottomLinear){
-                return;
-            }
-            isOpeningCommentBottomLinear=true;
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    //评论面板已经打开
-                    forceClick(436, 2250);
-                    isOpeningCommentBottomLinear=false;
-                    //弹起输入框
-                }
-            }, 500);
+        }, 1000);
 
-        }
+
+
+//        lastDoTime=System.currentTimeMillis();
+//        List<AccessibilityNodeInfo> node = findNodesById(commentIsOpenStr);
+//        List<AccessibilityNodeInfo> nodeEditext = findNodesById(commentEditTextStr);
+//        if(!isOk(node)) {
+//            if(!isOk(nodeEditext)){
+//                LogUtils.d("点击坐标打开评论框");
+//                //什么都没有点的情况
+//                forceClick(1000,1605);//打开评论面板
+//            }else{
+//                //已经弹起输入框的情况
+//                LogUtils.d("输入评论内容");
+//                setNodeText(nodeEditext.get(0), getCommentText());
+//                final List<AccessibilityNodeInfo> sendBt = findNodesById(sendBtStr);
+//                if(isOk(sendBt)){
+//                    new Handler().postDelayed(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            sendBt.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);
+//                            commentCount++;
+//                            forceBack();
+//                            BaseApp.getSharedPreferenceUtil().saveInt("commentCount", commentCount);
+//                            new Handler().postDelayed(new Runnable() {
+//                                @Override
+//                                public void run() {
+//                                    LogUtils.d("评论结束了，当前类型："+nowState);
+//                                    openNextOne();
+//                                    LogUtils.d("关闭评论对话框");
+//                                    nowState = NORMAL;
+//                                }
+//                            }, 500);
+//                            LogUtils.d("发送评论");
+//                        }
+//                    }, 1000);
+//                }else{
+//                    LogUtils.v("没有找到发送按钮");
+//                }
+//
+//            }
+//        }else{
+//            LogUtils.v("评论面板已经打开");
+//            if(isOpeningCommentBottomLinear){
+//                return;
+//            }
+//            isOpeningCommentBottomLinear=true;
+//            new Handler().postDelayed(new Runnable() {
+//                @Override
+//                public void run() {
+//                    //评论面板已经打开
+//                    forceClick(436, 2250);
+//                    isOpeningCommentBottomLinear=false;
+//                    //弹起输入框
+//                }
+//            }, 800);
+//
+//        }
 
     }
 
@@ -866,12 +933,8 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     }
 
     private void showTs(final String msg) {
-        Handler handlerThree=new Handler(Looper.getMainLooper());
-        handlerThree.post(new Runnable(){
-            public void run(){
-                Toast.makeText(getApplicationContext() ,msg,Toast.LENGTH_LONG).show();
-            }
-        });
+        LogUtils.i("当前操作："+msg);
+        TsUtils.showTips(msg);
     }
 
     private void showDialog(final String msg) {
@@ -984,36 +1047,47 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
      * 看下一个
      */
     private void openNextOne() {
-        String move="input swipe 560 1600 560 500";
-        LogUtils.v("滑动下一个视频");
-        doCmd(move);
-//        if (nowState!=WATING&&Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-//            nowState=WATING;
-//            int middleXValue = 360;
-//            final int topSideOfScreen = 100;
-//            final int bottomSizeOfScreen = 1200;
-//            Path path = new Path();
-//            path.moveTo(middleXValue,bottomSizeOfScreen);
-//            path.lineTo(middleXValue,topSideOfScreen);
-//            LogUtils.v("开始滑动到下一个视频");
-//            dispatchGesture(new GestureDescription.Builder().addStroke(new GestureDescription.StrokeDescription
-//                    (path, 20, 800)).build(), new GestureResultCallback() {
-//                @Override
-//                public void onCompleted(GestureDescription gestureDescription) {
-//                    super.onCompleted(gestureDescription);
-//                    LogUtils.v("滑动到下一个视频----已完成");
-//
-//                }
-//
-//                @Override
-//                public void onCancelled(GestureDescription gestureDescription) {
-//                    super.onCancelled(gestureDescription);
-//                    LogUtils.e("滑动到下一个视频----失败了");
-//
-//                }
-//            }, null);
-//            //滑动完成
-//        }
+//        String move="input swipe 560 1700 560 600";
+//        LogUtils.v("滑动下一个视频");
+//        doCmd(move);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            Path path = new Path();
+            path.moveTo(560 ,1700);
+            path.lineTo(560, 600);
+            LogUtils.v("开始滑动到下一个视频");
+            dispatchGesture(new GestureDescription.Builder().addStroke(new GestureDescription.StrokeDescription
+                    (path, 20, 600)).build(), new GestureResultCallback() {
+                @Override
+                public void onCompleted(GestureDescription gestureDescription) {
+                    super.onCompleted(gestureDescription);
+                    LogUtils.v("滑动到下一个视频----已完成");
+
+                }
+
+                @Override
+                public void onCancelled(GestureDescription gestureDescription) {
+                    super.onCancelled(gestureDescription);
+                    LogUtils.e("滑动到下一个视频----失败了");
+
+                }
+            }, new Handler(getMainLooper()));
+            //滑动完成
+        }
+    }
+
+    private void openNextOne(GestureResultCallback callback) {
+//        String move="input swipe 560 1700 560 600";
+//        LogUtils.v("滑动下一个视频");
+//        doCmd(move);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            Path path = new Path();
+            path.moveTo(560 ,1700);
+            path.lineTo(560, 600);
+            LogUtils.v("开始滑动到下一个视频");
+            dispatchGesture(new GestureDescription.Builder().addStroke(new GestureDescription.StrokeDescription
+                    (path, 20, 600)).build(),callback, new Handler(getMainLooper()));
+            //滑动完成
+        }
     }
 
 
