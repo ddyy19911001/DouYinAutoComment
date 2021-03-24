@@ -95,14 +95,14 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
     private long lastclickBottomLinearTime =0;//上次点击左上角红包按钮的时间
     /*************************基础配置*******************************************/
     private boolean isKillSelfDoing=false;
-    public static int yhWaitTimeEveryVideo=6;//养号页面停留时间
+    public static int yhWaitTimeEveryVideo=5;//养号页面停留时间
     public static int maxClickLikeSize=80;//最多可以点赞80个视频
     public static int lickPercent=70;//点赞概率
-    public static int commentPercent=50;//评论概率
+    public static int commentPercent=60;//评论概率
     public static long sendLivingCommentDelay=7000;//每隔7秒发一条评论
     private int sendLivingCommentCount=0;//单个直播间发送的总评论数
     public static  boolean needRandWords=true;//是否需要随机字符串
-    public static  boolean needAutoClose=true;//是否需要自动关闭所有程序
+    public static  boolean needAutoClose=false;//是否需要自动关闭所有程序
     private double livingPeopleCount=20;//单直播间发言时，人数最低要求
     private double NotSingleModelivingPeopleCount=20;//轮流直播间发言时直播间最低人数要求
     public static boolean isOpenClickLikeForever=false;//无限点赞
@@ -285,6 +285,8 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                     if (isOk(nodeIsLiving)) {
                         showTs("直播间，直接划过");
                         LogUtils.e("直播间，直接划过");
+                        viewedVideoCount--;
+                        BaseApp.getSharedPreferenceUtil().saveInt("viewedVideoCount",viewedVideoCount);
                         isSwiping = true;
                         openNextOne();
                         new Handler().postDelayed(new Runnable() {
@@ -298,6 +300,8 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                         if (isOk(nodeIsIsAd)) {
                             showTs("广告内容，直接划过");
                             LogUtils.e("广告内容，直接划过");
+                            viewedVideoCount--;
+                            BaseApp.getSharedPreferenceUtil().saveInt("viewedVideoCount",viewedVideoCount);
                             isSwiping = true;
                             openNextOne();
                             new Handler().postDelayed(new Runnable() {
@@ -387,8 +391,6 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                     public void run() {
                         nowState = NORMAL;
                         isSwiping = false;
-                        viewedVideoCount++;
-                        BaseApp.getSharedPreferenceUtil().saveInt("viewedVideoCount",viewedVideoCount);
                     }
                 }, 1000);
                 break;
@@ -880,41 +882,15 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
      * 杀死后台进程
      */
     public void killAll(boolean needReOpenPhone){
+        isSwitchOpen = false;
+        showTs("任务已结束");
+        performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK);
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                forceBack();
+                performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK);
             }
-        }, 1000);
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                forceBack();
-            }
-        }, 1100);
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                forceBack();
-            }
-        }, 1300);
-        if(needReOpenPhone) {
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    reOpenPhone();
-                }
-            }, 5000);
-        }else{
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                stopSelf();
-                android.os.Process.killProcess(android.os.Process.myPid());    //获取PID
-                System.exit(0);
-                }
-            }, 5000);
-        }
+        },200);
     }
 
 
@@ -950,6 +926,11 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
 
     private void setIsClickLike() {
         int isClickLike=RandomUtil.getRandom(100);
+        List<AccessibilityNodeInfo> nodesFriends = findNodesByText("你的好友");
+        if(isOk(nodesFriends)){
+            isClickLike=80;
+            showTs("这是我的好友，点赞概率变大");
+        }
         LogUtils.e("预设点赞概率："+lickPercent+",当前随机数值为："+isClickLike);
         if(isClickLike<=lickPercent){
             nowState=LIKEING;
@@ -987,7 +968,8 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
         showTs("开始新的计时任务");
         nowState=COUNTING;
         timer = new DownTimer();
-        timer.setTotalTime(yhWaitTimeEveryVideo*1000);
+        int rundTime = new Random().nextInt(5);
+        timer.setTotalTime(yhWaitTimeEveryVideo*1000+rundTime*1000);
         timer.setIntervalTime(1000);
         timer.setTimerLiener(new DownTimer.TimeListener() {
             @Override
@@ -1088,7 +1070,8 @@ public class AccessibilityAutoCommentAndClickLikeService extends AccessibilitySe
                 public void onCompleted(GestureDescription gestureDescription) {
                     super.onCompleted(gestureDescription);
                     LogUtils.v("滑动到下一个视频----已完成");
-
+                    viewedVideoCount++;
+                    BaseApp.getSharedPreferenceUtil().saveInt("viewedVideoCount",viewedVideoCount);
                 }
 
                 @Override
